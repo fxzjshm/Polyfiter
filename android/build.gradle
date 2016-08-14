@@ -19,6 +19,13 @@ android {
         minSdkVersion 8
         targetSdkVersion 24
     }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFile getDefaultProguardFile('proguard-android-optimize.txt')
+            proguardFile 'proguard-project.txt'
+        }
+    }
 }
 
 

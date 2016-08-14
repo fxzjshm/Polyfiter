@@ -1,0 +1,16 @@
+-verbose
+
+-libraryjars <java.home>/lib/rt.jar
+-libraryjars <java.home>/lib/jce.jar
+# -printusage shrinking.output
+-printmapping mapping.txt
+
+-keepattributes *Annotation*,EnclosingMethod
+ 
+-keep public class com.entermoor.polyfiter.desktop.DesktopLauncher {
+public static void main(java.lang.String[]);
+}
+-keep public class org.lwjgl.opengl.GlobalLock { *; }
+
+-dontwarn **
+

@@ -12,6 +12,7 @@ buildscript {
         classpath 'com.mobidevelop.robovm:robovm-gradle-plugin:2.1.0'
         classpath 'com.intel.gradle:moeGradlePlugin:1.1.0.final-1'
         classpath "com.jtransc:jtransc-gradle-plugin:0.3.0"
+        classpath 'net.sf.proguard:proguard-gradle:4.10'
     }
 }
 
@@ -119,12 +120,15 @@ project(":jtransc") {
     apply plugin: 'java'
     apply plugin: "jtransc"
 
+    project.ext.mainClassName = "com.entermoor.polyfiter.desktop.DesktopLauncher"
+
     dependencies {
         jtransc "com.jtransc.gdx:gdx-backend-jtransc:$jtranscVersion"
-        jtransc "com.jtransc.gdx:gdx-box2d-jtransc:$jtranscVersion"
+        // jtransc "com.jtransc.gdx:gdx-box2d-jtransc:$jtranscVersion"
 
-        compile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
-        compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+        compile project(":desktop")
+        // compile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
+        // compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
     }
 }
 

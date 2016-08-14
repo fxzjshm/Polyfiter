@@ -1,4 +1,5 @@
 apply plugin: "java"
+// apply plugin: "proguard"
 
 sourceCompatibility = 1.6
 sourceSets.main.java.srcDirs = [ "src/" ]
@@ -23,6 +24,20 @@ task dist(type: Jar) {
     manifest {
         attributes 'Main-Class': project.mainClassName
     }
+}
+
+task proguard(type: proguard.gradle.ProGuardTask,dependsOn:dist) {
+    /*ext{
+        jar.classifier="standalone"
+        injar= jar.archivePath
+        jar.classifier="proguard"
+        outJar= jar.archivePath
+
+    }*/
+    injars new File("build/libs/desktop-${version}.jar")
+    outjars new File("build/libs/desktop-$version-proguard.jar")
+    configuration '../android/proguard-project.txt'
+    configuration 'proguard-desktop.txt'
 }
 
 dist.dependsOn classes
