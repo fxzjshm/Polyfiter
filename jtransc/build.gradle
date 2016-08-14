@@ -1,0 +1,25 @@
+apply plugin: "jtransc"
+
+jtransc {
+	title = "Polyfiter"
+	name = "Polyfiter"
+	version = "0.0.1"
+	company = "Entermoor"
+	package_ = "com.entermoor.polyfiter"
+	embedResources = true
+	assets = ['../android/assets']
+	vsync = true
+	relooper = true
+	minimizeNames = false
+	analyzer = false
+
+	customTarget("cpp", "haxe:cpp", "exe")
+	customTarget("windows", "haxe:windows", "exe")
+	customTarget("linux", "haxe:linux", "bin")
+	customTarget("mac", "haxe:mac", "app")
+	customTarget("android", "haxe:android", "apk")
+	customTarget("ios", "haxe:ios", "ipa")
+	customTarget("tizen", "haxe:tizen", "app")
+	customTargetMinimized("html5", "haxe:html5", "js")
+	customTargetMinimized("plainHtml5", "js", "js")
+}
