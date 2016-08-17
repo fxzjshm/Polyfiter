@@ -5,12 +5,14 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
@@ -19,7 +21,11 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.kotcrab.vis.ui.VisUI;
 
+import java.util.List;
+
 public class Polyfiter extends ApplicationAdapter {
+    public static List</*Point*/ ?> points;
+
 
     public SpriteBatch batch;
     public InputProcessor inputProcessor;
@@ -34,6 +40,8 @@ public class Polyfiter extends ApplicationAdapter {
     public OrthographicCamera innerCamera;
     public Image img;
     public ShapeRenderer shapeRenderer;
+
+    public Color pointColor, xColor, yColor;
 
     @Override
     public void create() {
@@ -62,6 +70,8 @@ public class Polyfiter extends ApplicationAdapter {
 
         inputProcessor = new InputMultiplexer(stage, innerStage);
         Gdx.input.setInputProcessor(inputProcessor);
+
+        pointColor = new Color(1, 1, 0, 1);
 
     }
 
@@ -95,7 +105,7 @@ public class Polyfiter extends ApplicationAdapter {
         shapeRenderer.end();
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0, 1, 0, 1);
-//TODO points?
+// TODO points?
         shapeRenderer.end();
 
 //        innerStage.draw();
@@ -104,6 +114,7 @@ public class Polyfiter extends ApplicationAdapter {
 
     @Override
     public void dispose() {
+        shapeRenderer.dispose();
         stage.dispose();
         innerStage.dispose();
         batch.dispose();
