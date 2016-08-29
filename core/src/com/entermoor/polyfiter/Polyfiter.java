@@ -66,6 +66,7 @@ public class Polyfiter extends ApplicationAdapter {
 
         touchpad = new Touchpad(Gdx.graphics.getWidth() / 5, VisUI.getSkin());
 //        touchpad.setBounds( /* touchpad.getDeadzone() */ Gdx.graphics.getWidth() / 5, Gdx.graphics.getWidth() / 5, touchpad.getWidth(), touchpad.getHeight());
+        touchpad.getColor().a *= 0.233;
         stage.addActor(touchpad);
 
         inputProcessor = new InputMultiplexer(stage, innerStage);
