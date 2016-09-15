@@ -2,7 +2,7 @@ package com.entermoor.polyfiter;
 
 import com.badlogic.gdx.backends.iosmoe.IOSApplication;
 import com.badlogic.gdx.backends.iosmoe.IOSApplicationConfiguration;
-import com.intel.moe.natj.general.Pointer;
+import org.moe.natj.general.Pointer;
 import com.entermoor.polyfiter.Polyfiter;
 
 import ios.foundation.NSAutoreleasePool;
