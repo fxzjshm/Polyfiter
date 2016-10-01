@@ -25,11 +25,24 @@ task copyNatives << {
         if (!proguard.text.contains("-keep class com.badlogic.**")) {
             proguard << "\n-keep class com.badlogic.** { *; }\n"
             proguard << "-keep enum com.badlogic.** { *; }\n"
-        } else {
+        }
+    } else {
         proguard = new File("proguard.append.cfg")
         proguard << "\n-keep class com.badlogic.** { *; }\n"
         proguard << "-keep enum com.badlogic.** { *; }\n"
-        }
+        proguard << "-keep class java.** { *; }\n"
+        proguard << "-keepclasseswithmembernames class * { native <methods> ; }\n"
+        proguard << "-keepclassmembers enum * { \n"
+        proguard << "    public static **[] values();\n"
+        proguard << "    public static ** valueOf(java.lang.String);\n"
+        proguard << "}\n"
+
+        proguard << "#For something in json\n"
+        proguard << "-keep class com.badlogic.gdx.graphics.g2d.BitmapFont { *;}\n"
+        proguard << "-keep class com.badlogic.gdx.scenes.scene2d.ui.Skin\$TintedDrawable { *;}\n"
+        proguard << "-keep class com.badlogic.gdx.graphics.Color { *;}\n"
+        proguard << "-keep class **Style { *;}\n"
+        proguard << "-keep class com.kotcrab.vis.ui.Sizes { *;}\n"
     }
 }
 
