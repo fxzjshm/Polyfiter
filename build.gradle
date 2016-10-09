@@ -13,6 +13,7 @@ buildscript {
         classpath 'org.multi-os-engine:moe-gradle:1.1.2'
         classpath "com.jtransc:jtransc-gradle-plugin:0.3.2"
         classpath 'net.sf.proguard:proguard-gradle:5.2.1'
+        classpath 'ca.coglinc:javacc-gradle-plugin:2.3.1'
     }
 }
 
@@ -97,12 +98,31 @@ project(":html") {
 
 project(":core") {
     apply plugin: "java"
-
+    apply plugin: "ca.coglinc.javacc"
 
     dependencies {
         compile "com.badlogicgames.gdx:gdx:$gdxVersion"
         compile "com.kotcrab.vis:vis-ui:$visuiVersion"
     }
+
+    ext {
+        jjtPackage = 'src/main/javacc/net/hakugyokurou/fds/parser'
+    }
+
+    compileJjtree {
+        inputDirectory = file(jjtPackage)
+        outputDirectory = file(jjtPackage)
+    }
+
+    compileJavacc {
+        inputDirectory = file(jjtPackage)
+        outputDirectory = file(jjtPackage)
+    }
+
+    compileJavacc.doLast {
+        delete file(jjtPackage + '/tmp')
+    }
+
 }
 
 project(":ios-moe") {

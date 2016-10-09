@@ -23,12 +23,13 @@ import com.kotcrab.vis.ui.VisUI;
 
 import java.util.List;
 
+import net.hakugyokurou.fds.parser.MathExpressionParser;
+
 public class Polyfiter extends ApplicationAdapter {
     public static List<Point> points;
 
     public SpriteBatch batch;
     public InputProcessor inputProcessor;
-//    	public Texture img;
 
     public Stage stage;
     public Viewport viewport;
@@ -42,17 +43,6 @@ public class Polyfiter extends ApplicationAdapter {
 
     public Color pointColor, xColor, yColor;
     public float scaleDeltaXY = 1;
-
-    public static boolean isPointInScreen(float x, float y, float centerX, float centerY, float width, float height) {
-        /* Step 1:                     Step 2:                         Step 3:                       Step 4:
-        *   |                              |                          ---------                     ---------
-        *   | @                          @ |                              @                             @
-        *   |                              |
-        * */
-        if (centerX - (width / 2) < x && x < centerX + (width / 2) && centerY - (height / 2) < y && y < centerY + (height / 2))
-            return true;
-        return false;
-    }
 
     @Override
     public void create() {
@@ -79,23 +69,25 @@ public class Polyfiter extends ApplicationAdapter {
         innerStage.addActor(img);
 
         touchpad = new Touchpad(Math.min(Gdx.graphics.getWidth(), Gdx.graphics.getHeight()) / 5, VisUI.getSkin());
-//        touchpad.setBounds( /* touchpad.getDeadzone() */ Gdx.graphics.getWidth() / 5, Gdx.graphics.getWidth() / 5, touchpad.getWidth(), touchpad.getHeight());
         touchpad.getColor().a *= 0.233;
         stage.addActor(touchpad);
 
         inputProcessor = new InputMultiplexer(stage, innerStage);
         Gdx.input.setInputProcessor(inputProcessor);
 
-        pointColor = new Color(1, 1, 0, 1);
+        pointColor = new Color(0, 1, 0, 1);
+        xColor = new Color(1, 1, 0, 1);
+        yColor = new Color(0, 1, 1, 1);
 
+        innerCamera.position.x = 0;
+        innerCamera.position.y = 0;
     }
 
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height);
         touchpad.setDeadzone(width / 5);
-//        touchpad.setBounds(width / 5, width / 5, width / 5 * 2, width / 5 * 2);
-        touchpad.setBounds(Math.min(width, height) / 5, Math.min(width, height) / 5, Math.min(width, height) / 5 * 2, Math.min(width, height) / 5 * 2);
+        touchpad.setBounds(Math.min(width, height) / 21, Math.min(width, height) / 21, Math.min(width, height) / 7 * 2, Math.min(width, height) / 7 * 2);
         Gdx.app.debug("Resize", "Width: " + width + ", Height: " + height + ".");
     }
 
@@ -105,7 +97,7 @@ public class Polyfiter extends ApplicationAdapter {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         if (touchpad.isTouched()) {
-            Gdx.app.debug("Touchpad", touchpad.getKnobPercentX() + ", " + touchpad.getKnobPercentY());
+            // Gdx.app.debug("Touchpad", touchpad.getKnobPercentX() + ", " + touchpad.getKnobPercentY());
             float deltaX = touchpad.getKnobPercentX();
             float deltaY = touchpad.getKnobPercentY();
             scaleDeltaXY += Math.abs((deltaX + deltaY)) / 20;
@@ -133,20 +125,19 @@ public class Polyfiter extends ApplicationAdapter {
         innerCamera.update();
         shapeRenderer.setProjectionMatrix(innerCamera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(1, 1, 0, 1);
-// TODO x and y line.
-        if (isPointInScreen(0, 0, innerCamera.position.x, innerCamera.position.y, Gdx.graphics.getWidth(), Gdx.graphics.getHeight())){
-
+        shapeRenderer.setColor(xColor);
+        if (innerCamera.position.x - Gdx.graphics.getWidth() / 2 < 0 && innerCamera.position.x + Gdx.graphics.getWidth() / 2 > 0) {
+            shapeRenderer.line(0, innerCamera.position.y - Gdx.graphics.getHeight() / 2, 0, innerCamera.position.y + Gdx.graphics.getHeight() / 2);
+        }
+        shapeRenderer.setColor(yColor);
+        if (innerCamera.position.y - Gdx.graphics.getHeight() / 2 < 0 && innerCamera.position.y + Gdx.graphics.getHeight() / 2 > 0) {
+            shapeRenderer.line(innerCamera.position.x - Gdx.graphics.getWidth() / 2, 0, innerCamera.position.x + Gdx.graphics.getWidth() / 2, 0);
         }
         shapeRenderer.end();
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0, 1, 0, 1);
-// TODO points?
+        shapeRenderer.setColor(pointColor);
         shapeRenderer.circle(0, 0, 2.33F);
-//        shapeRenderer.circle(innerCamera.position.x, innerCamera.position.y, 6.666F);
         shapeRenderer.end();
-
-//        innerStage.draw();
         stage.draw();
     }
 
