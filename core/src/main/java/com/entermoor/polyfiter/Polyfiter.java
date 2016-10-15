@@ -13,20 +13,32 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.Event;
+import com.badlogic.gdx.scenes.scene2d.EventListener;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.entermoor.polyfiter.action.MoveCameraToAction;
 import com.kotcrab.vis.ui.VisUI;
-
-import java.util.List;
 
 import net.hakugyokurou.fds.parser.MathExpressionParser;
 
+import java.io.StringReader;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import de.tomgrill.gdxdialogs.core.GDXDialogsSystem;
+
 public class Polyfiter extends ApplicationAdapter {
-    public static List<Point> points;
+    public Set<Vector2> points = new LinkedHashSet<Vector2>();
+    public Set<String> funcs = new LinkedHashSet<String>(1);
+    public Set<Set<Vector2>> values = new LinkedHashSet<Set<Vector2>>();
 
     public SpriteBatch batch;
     public InputProcessor inputProcessor;
@@ -41,8 +53,48 @@ public class Polyfiter extends ApplicationAdapter {
     public Image img;
     public ShapeRenderer shapeRenderer;
 
-    public Color pointColor, xColor, yColor;
-    public float scaleDeltaXY = 1;
+    public Color pointColor, xColor, yColor, lineColor;
+    public float scaleDelta = 1;
+//    public float dScaleDelta = 0.15F;
+
+    public long padLastTouchTime = -1;
+
+    public static float dScaleDelta(float scaleDelta) {
+        return (float) 23.3 / scaleDelta;
+    }
+
+    /**
+     * /        sigma(i = 1 -> n)(xi*yi) - n*avgX*avgY
+     * | k = -------------------------------------------- ;
+     * \          sigma(i = 1 -> n)(xi^2) - n*avgX^2
+     * b = avgY - k * avgX;
+     * ==> f(x) = kx+b;
+     *
+     * @param points Given points
+     * @return "k*x+b"
+     */
+    public static String polyfit1(Set<Vector2> points) {
+        int n = points.size();
+        float sigmaX = 0;
+        float sigmaY = 0;
+        float sigmaXY = 0;
+        float sigmaX2 = 0;
+
+        for (Vector2 point : points) {
+            sigmaX += point.x;
+            sigmaY += point.y;
+            sigmaXY += point.x * point.y;
+            sigmaX2 += point.x * point.x;
+        }
+
+        float avgX = sigmaX / n;
+        float avgY = sigmaY / n;
+
+        float k = (sigmaXY - n * avgX * avgY) / (sigmaX2 - n * avgX * avgX);
+        float b = avgY - k * avgX;
+
+        return "(" + k + ")*(x)+(" + b + ")";
+    }
 
     @Override
     public void create() {
@@ -63,7 +115,16 @@ public class Polyfiter extends ApplicationAdapter {
         innerStage.setDebugAll(true);
         shapeRenderer = new ShapeRenderer();
 
+        //Avoid exception on hot swap.
+        if (VisUI.isLoaded())
+            VisUI.dispose();
         VisUI.load();
+
+        try {
+            GDXDialogsSystem.getDialogManager();
+        } catch (NullPointerException e) {
+            GDXDialogsSystem.install();
+        }
 
         img = new Image(new TextureRegionDrawable(new TextureRegion(new Texture("badlogic.jpg"))));
         innerStage.addActor(img);
@@ -78,17 +139,47 @@ public class Polyfiter extends ApplicationAdapter {
         pointColor = new Color(0, 1, 0, 1);
         xColor = new Color(1, 1, 0, 1);
         yColor = new Color(0, 1, 1, 1);
+        lineColor = new Color(1, 1, 1, 1);
 
         innerCamera.position.x = 0;
         innerCamera.position.y = 0;
+
+        touchpad.addListener(new EventListener() {
+            @Override
+            public boolean handle(Event event) {
+                if (event instanceof InputEvent) {
+                    if (((InputEvent) event).getType().equals(InputEvent.Type.touchUp)) {
+                        if (padLastTouchTime > 0) {
+                            long delta = TimeUtils.millis() - padLastTouchTime;
+                            Gdx.app.debug("Delta time", "" + delta);
+                            if (delta < 0) {
+                                Gdx.app.error("Delta time", "can't be null! The time has gone back?!");
+                            } else if (delta < 233) {
+                                MoveCameraToAction action = new MoveCameraToAction((innerCamera), 0.666666F);
+                                action.setPosition(0, 0, 0);
+                                touchpad.addAction(action);
+                            }
+                        }
+                        padLastTouchTime = TimeUtils.millis();
+                    }
+                }
+                return true;
+            }
+        });
+        points.add(new Vector2(0, 0));
+        points.add(new Vector2(1, 1));
+        points.add(new Vector2(5, 5));
+        String func = polyfit1(points);
+        funcs.add(func);
+        cacheValue(func);
     }
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height);
-        touchpad.setDeadzone(width / 5);
-        touchpad.setBounds(Math.min(width, height) / 21, Math.min(width, height) / 21, Math.min(width, height) / 7 * 2, Math.min(width, height) / 7 * 2);
         Gdx.app.debug("Resize", "Width: " + width + ", Height: " + height + ".");
+        viewport.update(width, height);
+//        touchpad.setDeadzone(0);
+        touchpad.setBounds(Math.min(width, height) / 11, Math.min(width, height) / 11, Math.min(width, height) / 7 * 2, Math.min(width, height) / 7 * 2);
     }
 
     @Override
@@ -100,23 +191,25 @@ public class Polyfiter extends ApplicationAdapter {
             // Gdx.app.debug("Touchpad", touchpad.getKnobPercentX() + ", " + touchpad.getKnobPercentY());
             float deltaX = touchpad.getKnobPercentX();
             float deltaY = touchpad.getKnobPercentY();
-            scaleDeltaXY += Math.abs((deltaX + deltaY)) / 20;
-            innerCamera.translate(deltaX * scaleDeltaXY, deltaY * scaleDeltaXY);
+            scaleDelta += Math.abs((deltaX + deltaY)) / 20;
+            innerCamera.translate(deltaX * scaleDelta, deltaY * scaleDelta);
         } else if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            scaleDeltaXY += 0.1;
-            innerCamera.translate(-1 * scaleDeltaXY, 0);
+            scaleDelta += dScaleDelta(scaleDelta);
+            innerCamera.translate(-1 * scaleDelta, 0);
         } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            scaleDeltaXY += 0.1;
-            innerCamera.translate(1 * scaleDeltaXY, 0);
+            scaleDelta += dScaleDelta(scaleDelta);
+            innerCamera.translate(1 * scaleDelta, 0);
         } else if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
-            scaleDeltaXY += 0.1;
-            innerCamera.translate(0, 1 * scaleDeltaXY);
+            scaleDelta += dScaleDelta(scaleDelta);
+            innerCamera.translate(0, 1 * scaleDelta);
         } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            scaleDeltaXY += 0.1;
-            innerCamera.translate(0, -1 * scaleDeltaXY);
+            scaleDelta += dScaleDelta(scaleDelta);
+            innerCamera.translate(0, -1 * scaleDelta);
         } else {
-            scaleDeltaXY = 1;
+            scaleDelta = 1;
         }
+
+        stage.act();
 
         batch.begin();
 //		batch.draw(img, 0, 0);
@@ -125,18 +218,28 @@ public class Polyfiter extends ApplicationAdapter {
         innerCamera.update();
         shapeRenderer.setProjectionMatrix(innerCamera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(xColor);
+        shapeRenderer.setColor(yColor);
         if (innerCamera.position.x - Gdx.graphics.getWidth() / 2 < 0 && innerCamera.position.x + Gdx.graphics.getWidth() / 2 > 0) {
             shapeRenderer.line(0, innerCamera.position.y - Gdx.graphics.getHeight() / 2, 0, innerCamera.position.y + Gdx.graphics.getHeight() / 2);
         }
-        shapeRenderer.setColor(yColor);
+        shapeRenderer.setColor(xColor);
         if (innerCamera.position.y - Gdx.graphics.getHeight() / 2 < 0 && innerCamera.position.y + Gdx.graphics.getHeight() / 2 > 0) {
             shapeRenderer.line(innerCamera.position.x - Gdx.graphics.getWidth() / 2, 0, innerCamera.position.x + Gdx.graphics.getWidth() / 2, 0);
         }
         shapeRenderer.end();
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(pointColor);
-        shapeRenderer.circle(0, 0, 2.33F);
+        shapeRenderer.circle(0, 0, 6.66F);
+        for (Vector2 point : points) {
+            shapeRenderer.circle(point.x, point.y, 2.33F);
+        }
+        shapeRenderer.setColor(lineColor);
+        for (Set<Vector2> set : values) {
+            for (Vector2 point : set) {
+                shapeRenderer.circle(point.x, point.y, 2.33F);
+            }
+        }
+//        shapeRenderer.circle(innerCamera.position.x - Gdx.graphics.getWidth() / 2, 0, 10);
         shapeRenderer.end();
         stage.draw();
     }
@@ -151,12 +254,17 @@ public class Polyfiter extends ApplicationAdapter {
         VisUI.dispose();
     }
 
-    public static class Point {
-        public double x, y = 0;
-
-        public Point(double x, double y) {
-            this.x = x;
-            this.y = y;
+    public void cacheValue(String func) {
+        int n = Math.min(viewport.getScreenWidth(), 1000);
+        Set<Vector2> values = new LinkedHashSet<Vector2>(n);
+        double deltaX = Gdx.graphics.getWidth() / n;
+        for (int i = 0; i <= n; i++) {
+            float x = (float) (innerCamera.position.x - Gdx.graphics.getWidth() / 2 + deltaX * i * 2);
+            String expression = func.replace("x", "" + x);
+            float y = (float) MathExpressionParser.parseLine(new StringReader(expression)).eval();
+            values.add(new Vector2(x, y));
         }
+        this.values.add(values);
     }
+
 }

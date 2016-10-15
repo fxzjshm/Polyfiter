@@ -1,4 +1,12 @@
 android {
+    signingConfigs {
+        config {
+            keyAlias 'entermoor'
+            keyPassword 'entermoor'
+            storeFile file('D:/workspace/BlackAndWhiteForest/android/key.keystore')
+            storePassword 'entermoor'
+        }
+    }
     buildToolsVersion "24.0.2"
     compileSdkVersion 24
     sourceSets {
@@ -16,14 +24,14 @@ android {
     }
     defaultConfig {
         applicationId "com.entermoor.polyfiter"
-        minSdkVersion 8
+        minSdkVersion 9
         targetSdkVersion 24
     }
     buildTypes {
         release {
-            minifyEnabled true
-            proguardFile getDefaultProguardFile('proguard-android-optimize.txt')
+            proguardFile 'D:/workspace/Polyfiter/android/proguard-project.txt'
             proguardFile 'proguard-project.txt'
+            signingConfig signingConfigs.config
         }
     }
     dexOptions {
@@ -33,7 +41,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_6
         targetCompatibility JavaVersion.VERSION_1_6
     }
-
     lintOptions {
         abortOnError false
         checkReleaseBuilds false
