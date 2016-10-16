@@ -25,8 +25,10 @@ import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.entermoor.polyfiter.action.MoveCameraToAction;
+import com.entermoor.polyfiter.utils.Polyfit;
 import com.kotcrab.vis.ui.VisUI;
 
+import net.hakugyokurou.fds.node.InvalidExpressionException;
 import net.hakugyokurou.fds.parser.MathExpressionParser;
 
 import java.io.StringReader;
@@ -36,6 +38,9 @@ import java.util.Set;
 import de.tomgrill.gdxdialogs.core.GDXDialogsSystem;
 
 public class Polyfiter extends ApplicationAdapter {
+
+    public static Object lock = new Object();
+
     public Set<Vector2> points = new LinkedHashSet<Vector2>();
     public Set<String> funcs = new LinkedHashSet<String>(1);
     public Set<Set<Vector2>> values = new LinkedHashSet<Set<Vector2>>();
@@ -58,42 +63,10 @@ public class Polyfiter extends ApplicationAdapter {
 //    public float dScaleDelta = 0.15F;
 
     public long padLastTouchTime = -1;
+    public int nCachedPointMin = 1000;
 
     public static float dScaleDelta(float scaleDelta) {
         return (float) 23.3 / scaleDelta;
-    }
-
-    /**
-     * /        sigma(i = 1 -> n)(xi*yi) - n*avgX*avgY
-     * | k = -------------------------------------------- ;
-     * \          sigma(i = 1 -> n)(xi^2) - n*avgX^2
-     * b = avgY - k * avgX;
-     * ==> f(x) = kx+b;
-     *
-     * @param points Given points
-     * @return "k*x+b"
-     */
-    public static String polyfit1(Set<Vector2> points) {
-        int n = points.size();
-        float sigmaX = 0;
-        float sigmaY = 0;
-        float sigmaXY = 0;
-        float sigmaX2 = 0;
-
-        for (Vector2 point : points) {
-            sigmaX += point.x;
-            sigmaY += point.y;
-            sigmaXY += point.x * point.y;
-            sigmaX2 += point.x * point.x;
-        }
-
-        float avgX = sigmaX / n;
-        float avgY = sigmaY / n;
-
-        float k = (sigmaXY - n * avgX * avgY) / (sigmaX2 - n * avgX * avgX);
-        float b = avgY - k * avgX;
-
-        return "(" + k + ")*(x)+(" + b + ")";
     }
 
     @Override
@@ -167,9 +140,9 @@ public class Polyfiter extends ApplicationAdapter {
             }
         });
         points.add(new Vector2(0, 0));
-        points.add(new Vector2(1, 1));
+        points.add(new Vector2(1, 2));
         points.add(new Vector2(5, 5));
-        String func = polyfit1(points);
+        String func = Polyfit.polyfit1(points);
         funcs.add(func);
         cacheValue(func);
     }
@@ -178,8 +151,16 @@ public class Polyfiter extends ApplicationAdapter {
     public void resize(int width, int height) {
         Gdx.app.debug("Resize", "Width: " + width + ", Height: " + height + ".");
         viewport.update(width, height);
-//        touchpad.setDeadzone(0);
+        touchpad.setDeadzone(0);
         touchpad.setBounds(Math.min(width, height) / 11, Math.min(width, height) / 11, Math.min(width, height) / 7 * 2, Math.min(width, height) / 7 * 2);
+        synchronized (lock) {
+        if (values.size() > 0) {
+            values.clear();
+            for (String func : funcs) {
+                cacheValue(func);
+            }
+        }
+        }
     }
 
     @Override
@@ -236,7 +217,7 @@ public class Polyfiter extends ApplicationAdapter {
         shapeRenderer.setColor(lineColor);
         for (Set<Vector2> set : values) {
             for (Vector2 point : set) {
-                shapeRenderer.circle(point.x, point.y, 2.33F);
+                shapeRenderer.circle(point.x, point.y, 1);
             }
         }
 //        shapeRenderer.circle(innerCamera.position.x - Gdx.graphics.getWidth() / 2, 0, 10);
@@ -255,14 +236,18 @@ public class Polyfiter extends ApplicationAdapter {
     }
 
     public void cacheValue(String func) {
-        int n = Math.min(viewport.getScreenWidth(), 1000);
+        int n = Math.min(viewport.getScreenWidth(), nCachedPointMin);
         Set<Vector2> values = new LinkedHashSet<Vector2>(n);
         double deltaX = Gdx.graphics.getWidth() / n;
         for (int i = 0; i <= n; i++) {
-            float x = (float) (innerCamera.position.x - Gdx.graphics.getWidth() / 2 + deltaX * i * 2);
-            String expression = func.replace("x", "" + x);
-            float y = (float) MathExpressionParser.parseLine(new StringReader(expression)).eval();
-            values.add(new Vector2(x, y));
+            try {
+                float x = (float) (innerCamera.position.x - Gdx.graphics.getWidth() / 2 + deltaX * i * 2);
+                String expression = func.replace("x", "" + x);
+                float y = (float) MathExpressionParser.parseLine(new StringReader(expression)).eval();
+                values.add(new Vector2(x, y));
+            } catch (InvalidExpressionException iee) {
+                Gdx.app.debug("CacheValue", "Failed to cache " + func + ", x=" + i + "\n", iee);
+            }
         }
         this.values.add(values);
     }
