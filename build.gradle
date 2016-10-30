@@ -8,9 +8,9 @@ buildscript {
     }
     dependencies {
         classpath 'de.richsource.gradle.plugins:gwt-gradle-plugin:0.6'
-        classpath 'com.android.tools.build:gradle:2.2.1'
+        classpath 'com.android.tools.build:gradle:2.2.2'
         classpath 'com.mobidevelop.robovm:robovm-gradle-plugin:2.2.0'
-        classpath 'org.multi-os-engine:moe-gradle:1.1.2'
+        classpath 'org.multi-os-engine:moe-gradle:1.2.3'
         classpath "com.jtransc:jtransc-gradle-plugin:0.3.2"
         classpath 'net.sf.proguard:proguard-gradle:5.2.1'
         classpath 'ca.coglinc:javacc-gradle-plugin:2.3.1'
@@ -31,7 +31,7 @@ allprojects {
         aiVersion = '1.8.0'
         visuiVersion = '1.2.1'
         jtranscVersion = '0.3.3'
-        gdxDialogsVersion = '1.1.2-SNAPSHOT'
+        gdxDialogsVersion = '1.1.2-SNAPSHOT-DEV'
     }
 
     repositories {

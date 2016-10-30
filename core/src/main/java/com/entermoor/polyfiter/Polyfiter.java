@@ -36,6 +36,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import de.tomgrill.gdxdialogs.core.GDXDialogsSystem;
+import de.tomgrill.gdxdialogs.core.dialogs.GDXButtonDialog;
+import de.tomgrill.gdxdialogs.core.listener.ButtonClickListener;
 
 public class Polyfiter extends ApplicationAdapter {
 
@@ -145,6 +147,24 @@ public class Polyfiter extends ApplicationAdapter {
         String func = Polyfit.polyfit1(points);
         funcs.add(func);
         cacheValue(func);
+
+        GDXButtonDialog bDialog = GDXDialogsSystem.getDialogManager().newDialog(GDXButtonDialog.class);
+        bDialog.setTitle("Buy a item");
+        bDialog.setMessage("Do you want to buy the mozarella?");
+
+        bDialog.setClickListener(new ButtonClickListener() {
+
+            @Override
+            public void click(int button) {
+                // handle button click here
+            }
+        });
+
+        bDialog.addButton("No");
+        bDialog.addButton("Never");
+        bDialog.addButton("Yes, nomnom!");
+
+        bDialog.build().show();
     }
 
     @Override

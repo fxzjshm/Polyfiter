@@ -5,8 +5,8 @@ import com.badlogic.gdx.backends.iosmoe.IOSApplicationConfiguration;
 import org.moe.natj.general.Pointer;
 import com.entermoor.polyfiter.Polyfiter;
 
-import ios.foundation.NSAutoreleasePool;
-import ios.uikit.c.UIKit;
+// import apple.foundation.NSAutoreleasePool;
+import apple.uikit.c.UIKit;
 
 public class IOSMoeLauncher extends IOSApplication.Delegate {
 
@@ -22,8 +22,8 @@ public class IOSMoeLauncher extends IOSApplication.Delegate {
     }
 
     public static void main(String[] argv) {
-        NSAutoreleasePool pool = NSAutoreleasePool.alloc();
+        // NSAutoreleasePool pool = NSAutoreleasePool.alloc();
         UIKit.UIApplicationMain(0, null, null, IOSMoeLauncher.class.getName());
-        pool.dealloc();
+        // pool.dealloc();
     }
 }

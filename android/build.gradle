@@ -1,11 +1,5 @@
 android {
     signingConfigs {
-        config {
-            keyAlias 'entermoor'
-            keyPassword 'entermoor'
-            storeFile file('D:/workspace/BlackAndWhiteForest/android/key.keystore')
-            storePassword 'entermoor'
-        }
     }
     buildToolsVersion "24.0.2"
     compileSdkVersion 24
@@ -29,9 +23,9 @@ android {
     }
     buildTypes {
         release {
-            proguardFile 'D:/workspace/Polyfiter/android/proguard-project.txt'
+            // proguardFile 'D:/workspace/Polyfiter/android/proguard-project.txt'
             proguardFile 'proguard-project.txt'
-            signingConfig signingConfigs.config
+            // signingConfig signingConfigs.config
         }
     }
     dexOptions {
