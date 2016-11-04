@@ -1,27 +1,27 @@
 package net.hakugyokurou.fds.node;
 
 public class RationalNode implements IEvaluable {
-	
-	private final double value;
-	
-	public RationalNode(double value) {
-		this.value = value;
-	}
 
-	@Override
-	public double eval() {
-		return value;
-	}
+    private final double value;
 
-	@Override
-	public String toString() {
-		long lv = (long)value;
-		return value == lv ? String.format("%d ", lv) : String.format("%.3f ", value);
-	}
+    public RationalNode(double value) {
+        this.value = value;
+    }
 
-	@Override
-	public void verify() {
-		/*
+    @Override
+    public double eval() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        long lv = (long) value;
+        return value == lv ? "" + lv : "" + value;
+    }
+
+    @Override
+    public void verify() {
+        /*
 		　　　　　　　　　　　＿＿＿＿/　 　 　 　 l
 		　　　    　　　　 x≪圭圭圭圭ﾐ/　　 　 　     ト､
 		至至至至至ZZzzx∠ 　 ｀`≪圭ミ{　　　　 　　 }ﾐ会x
@@ -54,5 +54,5 @@ public class RationalNode implements IEvaluable {
 		　　 　        癶　 / ∥　　 　   /（　 l　　   l　/}　 {/　／　 　　/
 		　　       　/　　/ {　　　  ｛⌒ヽ   l 　 　   ∨ﾉ　 l /／　　　　 /
 		*/
-	}
+    }
 }

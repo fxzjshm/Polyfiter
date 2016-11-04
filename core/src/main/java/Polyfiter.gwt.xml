@@ -3,5 +3,5 @@
 <module>
 	<source path="com/entermoor/polyfiter" />
     <source path="net/hakugyokurou/fds" />
-    <source path="../javacc/net/hakugyokurou/fds/parser" />
+    <!-- source path="../javacc/net/hakugyokurou/fds/parser" / -->
 </module>
