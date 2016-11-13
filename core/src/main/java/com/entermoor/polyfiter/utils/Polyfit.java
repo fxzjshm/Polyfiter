@@ -61,7 +61,7 @@ public abstract class Polyfit {
 
     //}
 
-    public static double parseSpecialFuncs(String expression, ReflectWrapper reflectWrapper) throws IOException {
+    public static double parseSpecialFuncs(String expression/*, ReflectWrapper reflectWrapper*/) throws IOException {
         for (String funcPrefix : funcPrefixes) {
             try {
                 String innerExpression = getExpressionInFunc(expression, funcPrefix);
@@ -70,7 +70,7 @@ public abstract class Polyfit {
                     innerResult = MathExpressionParser.parseLine(new StringReader(innerExpression)).eval();
                 } catch (InvalidExpressionException iee) {
                     String innerinnerExpression = eatAPairOfBrackets(innerExpression);
-                    innerResult = parseSpecialFuncs(innerinnerExpression, reflectWrapper);
+                    innerResult = parseSpecialFuncs(innerinnerExpression/*, reflectWrapper*/);
                 }
 
                 String funcName = funcPrefix;
@@ -173,9 +173,9 @@ public abstract class Polyfit {
         throw new IllegalArgumentException("Cannot find any known function prefix in " + wholeExpression);
     }
 
-    public interface ReflectWrapper {
+    /*public interface ReflectWrapper {
         Object invoke(Object obj, String className, String methodName, Object... objects);
-    }
+    }*/
 
     public static class Point2 {
         public double x = 0, y = 0;

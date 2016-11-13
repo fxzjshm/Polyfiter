@@ -269,7 +269,7 @@ public class Polyfiter extends ApplicationAdapter {
         return values;
     }
 
-    public static class GdxReflectionWrapper implements Polyfit.ReflectWrapper {
+    /*public static class GdxReflectionWrapper implements Polyfit.ReflectWrapper {
 
         @Override
         public Object invoke(Object obj, String className, String methodName, Object... objects) {
@@ -283,6 +283,6 @@ public class Polyfiter extends ApplicationAdapter {
                 throw new IllegalArgumentException("Error invoking " + className + "." + methodName + " (See log above)", e);
             }
         }
-    }
+    }*/
 
 }
