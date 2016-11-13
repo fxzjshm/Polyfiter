@@ -3,7 +3,9 @@ buildscript {
         mavenLocal()
         mavenCentral()
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+		maven { url "https://oss.sonatype.org/content/repositories/releases/" }
         jcenter()
+		// maven { url "https://palantir.bintray.com/releases/" }
         // maven { url uri(System.getenv("INTEL_MULTI_OS_ENGINE_HOME") + "/gradle") }
     }
     dependencies {
@@ -11,9 +13,10 @@ buildscript {
         classpath 'com.android.tools.build:gradle:2.2.2'
         classpath 'com.mobidevelop.robovm:robovm-gradle-plugin:2.2.0'
         classpath 'org.multi-os-engine:moe-gradle:1.2.3'
-        classpath "com.jtransc:jtransc-gradle-plugin:0.3.2"
+        classpath "com.jtransc:jtransc-gradle-plugin:0.4.0"
         classpath 'net.sf.proguard:proguard-gradle:5.2.1'
         classpath 'ca.coglinc:javacc-gradle-plugin:2.3.1'
+		// classpath "com.palantir.gradle.javadist:gradle-java-distribution:1.1.0"
     }
 }
 
@@ -31,7 +34,7 @@ allprojects {
         aiVersion = '1.8.0'
         visuiVersion = '1.2.1'
         jtranscVersion = '0.3.3'
-        gdxDialogsVersion = '1.1.2-SNAPSHOT-DEV'
+        gdxDialogsVersion = '1.1.2-SNAPSHOT'
     }
 
     repositories {
@@ -39,12 +42,14 @@ allprojects {
         mavenCentral()
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
         maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+		jcenter()
+		// maven { url "https://palantir.bintray.com/releases/" }
     }
 }
 
 project(":desktop") {
     apply plugin: "java"
-
+	// apply plugin: 'com.palantir.java-distribution'
 
     dependencies {
         compile project(":core")
@@ -52,6 +57,12 @@ project(":desktop") {
         compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
         compile "de.tomgrill.gdxdialogs:gdx-dialogs-desktop:$gdxDialogsVersion"
     }
+	/*
+	distribution {
+        serviceName 'Polyfiter'
+        mainClass 'com.entermoor.polyfiter.desktop.DesktopLauncher'
+    }
+	*/
 }
 
 project(":android") {

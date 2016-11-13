@@ -1,8 +1,8 @@
 package net.hakugyokurou.fds.node;
 
-public abstract interface IEvaluable {
+public interface IEvaluable {
 
-	public abstract double eval();
+	double eval();
 	
-	public abstract void verify();
+	void verify();
 }

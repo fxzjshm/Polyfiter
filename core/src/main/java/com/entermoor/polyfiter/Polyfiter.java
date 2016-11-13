@@ -13,7 +13,6 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -22,6 +21,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.TimeUtils;
+import com.badlogic.gdx.utils.reflect.ClassReflection;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.entermoor.polyfiter.action.MoveCameraToAction;
@@ -32,7 +32,9 @@ import net.hakugyokurou.fds.node.InvalidExpressionException;
 import net.hakugyokurou.fds.parser.MathExpressionParser;
 
 import java.io.StringReader;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import de.tomgrill.gdxdialogs.core.GDXDialogsSystem;
@@ -41,11 +43,10 @@ import de.tomgrill.gdxdialogs.core.listener.ButtonClickListener;
 
 public class Polyfiter extends ApplicationAdapter {
 
-    public static Object lock = new Object();
+    public static final Object lock = new Object();
 
-    public Set<Vector2> points = new LinkedHashSet<Vector2>();
-    public Set<String> funcs = new LinkedHashSet<String>(1);
-    public Set<Set<Vector2>> values = new LinkedHashSet<Set<Vector2>>();
+    public Set<Polyfit.Point2> points = new LinkedHashSet<Polyfit.Point2>();
+    public Map<String, Set<Polyfit.Point2>> funcs = new LinkedHashMap<String, Set<Polyfit.Point2>>();
 
     public SpriteBatch batch;
     public InputProcessor inputProcessor;
@@ -141,12 +142,11 @@ public class Polyfiter extends ApplicationAdapter {
                 return true;
             }
         });
-        points.add(new Vector2(0, 0));
-        points.add(new Vector2(1, 2));
-        points.add(new Vector2(5, 5));
+        points.add(new Polyfit.Point2(0, 0));
+        points.add(new Polyfit.Point2(1, 2));
+        points.add(new Polyfit.Point2(5, 5));
         String func = Polyfit.polyfit1(points);
-        funcs.add(func);
-        cacheValue(func);
+        funcs.put(func, cacheValue(func));
 
         GDXButtonDialog bDialog = GDXDialogsSystem.getDialogManager().newDialog(GDXButtonDialog.class);
         bDialog.setTitle("Buy a item");
@@ -170,16 +170,13 @@ public class Polyfiter extends ApplicationAdapter {
     @Override
     public void resize(int width, int height) {
         Gdx.app.debug("Resize", "Width: " + width + ", Height: " + height + ".");
-        viewport.update(width, height);
+        //viewport.update(width, height);
         touchpad.setDeadzone(0);
         touchpad.setBounds(Math.min(width, height) / 11, Math.min(width, height) / 11, Math.min(width, height) / 7 * 2, Math.min(width, height) / 7 * 2);
         synchronized (lock) {
-        if (values.size() > 0) {
-            values.clear();
-            for (String func : funcs) {
-                cacheValue(func);
+            for (Map.Entry<String, Set<Polyfit.Point2>> entry : funcs.entrySet()) {
+                entry.setValue(cacheValue(entry.getKey()));
             }
-        }
         }
     }
 
@@ -231,13 +228,13 @@ public class Polyfiter extends ApplicationAdapter {
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(pointColor);
         shapeRenderer.circle(0, 0, 6.66F);
-        for (Vector2 point : points) {
-            shapeRenderer.circle(point.x, point.y, 2.33F);
+        for (Polyfit.Point2 point : points) {
+            shapeRenderer.circle((float) point.x, (float) point.y, 2.33F);
         }
         shapeRenderer.setColor(lineColor);
-        for (Set<Vector2> set : values) {
-            for (Vector2 point : set) {
-                shapeRenderer.circle(point.x, point.y, 1);
+        for (Map.Entry<String, Set<Polyfit.Point2>> entry : funcs.entrySet()) {
+            for (Polyfit.Point2 point : entry.getValue()) {
+                shapeRenderer.circle((float) point.x, (float) point.y, 1);
             }
         }
 //        shapeRenderer.circle(innerCamera.position.x - Gdx.graphics.getWidth() / 2, 0, 10);
@@ -255,21 +252,37 @@ public class Polyfiter extends ApplicationAdapter {
         VisUI.dispose();
     }
 
-    public void cacheValue(String func) {
+    public Set cacheValue(String func) {
         int n = Math.min(viewport.getScreenWidth(), nCachedPointMin);
-        Set<Vector2> values = new LinkedHashSet<Vector2>(n);
+        Set<Polyfit.Point2> values = new LinkedHashSet<Polyfit.Point2>(n);
         double deltaX = Gdx.graphics.getWidth() / n;
         for (int i = 0; i <= n; i++) {
             try {
                 float x = (float) (innerCamera.position.x - Gdx.graphics.getWidth() / 2 + deltaX * i * 2);
                 String expression = func.replace("x", "" + x);
                 float y = (float) MathExpressionParser.parseLine(new StringReader(expression)).eval();
-                values.add(new Vector2(x, y));
+                values.add(new Polyfit.Point2(x, y));
             } catch (InvalidExpressionException iee) {
                 Gdx.app.debug("CacheValue", "Failed to cache " + func + ", x=" + i + "\n", iee);
             }
         }
-        this.values.add(values);
+        return values;
+    }
+
+    public static class GdxReflectionWrapper implements Polyfit.ReflectWrapper {
+
+        @Override
+        public Object invoke(Object obj, String className, String methodName, Object... objects) {
+            try {
+                Class[] classes = new Class[objects.length];
+                for (int i = 0; i < objects.length; i++) {
+                    classes[i] = objects[i].getClass();
+                }
+                return ClassReflection.forName(className).getDeclaredMethod(methodName, classes).invoke(obj, objects);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Error invoking " + className + "." + methodName + " (See log above)", e);
+            }
+        }
     }
 
 }

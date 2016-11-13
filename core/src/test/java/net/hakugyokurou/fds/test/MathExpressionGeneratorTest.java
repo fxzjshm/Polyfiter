@@ -35,7 +35,7 @@ public class MathExpressionGeneratorTest {
 		operationLeft.setAccessible(true);
 		operationRight.setAccessible(true);
 	}
-
+/*
 	@Test
 	public void testGenerateEasy() throws Exception {
 		MathExpression expr = MathExpressionGenerator.generateEasy();
@@ -67,7 +67,7 @@ public class MathExpressionGeneratorTest {
 		for(MathExpression expression : MathExpressionGenerator.generateLunatic(100))
 			checkExpr(expression, 8, 11);
 	}
-	
+	*/
 	private void checkExpr(MathExpression expr) {
 		expr.verify();
 		expr.eval();

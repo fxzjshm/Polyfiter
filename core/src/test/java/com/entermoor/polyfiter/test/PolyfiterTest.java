@@ -1,6 +1,5 @@
 package com.entermoor.polyfiter.test;
 
-import com.badlogic.gdx.math.Vector2;
 import com.entermoor.polyfiter.utils.Polyfit;
 
 import net.hakugyokurou.fds.parser.MathExpressionParser;
@@ -17,10 +16,10 @@ public class PolyfiterTest {
 
     @Test
     public void testPolyfit1() {
-        Set<Vector2> points = new LinkedHashSet<Vector2>();
-        points.add(new Vector2(-2, -2));
-        points.add(new Vector2(-1, 1));
-        points.add(new Vector2(1, 7));
+        Set<Polyfit.Point2> points = new LinkedHashSet<Polyfit.Point2>();
+        points.add(new Polyfit.Point2(-2, -2));
+        points.add(new Polyfit.Point2(-1, 1));
+        points.add(new Polyfit.Point2(1, 7));
         String func = Polyfit.polyfit1(points);
         System.out.println(func);
 
