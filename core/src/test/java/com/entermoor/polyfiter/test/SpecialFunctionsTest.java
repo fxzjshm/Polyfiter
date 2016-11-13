@@ -12,7 +12,7 @@ public class SpecialFunctionsTest {
 
     @Test
     public void testSpecialFuncs() throws IOException {
-        Assert.assertEquals("Polyfit.parseSpecialFuncs() failed!", Polyfit.parseSpecialFuncs("2 * ln (2 * 7 + 3)+233+28", new Polyfiter.GdxReflectionWrapper()), 266.6664266881124, 1);
+        Assert.assertEquals("Polyfit.parseSpecialFuncs() failed!", Polyfit.parseSpecialFuncs("2 * ln (2 * 7 + 3)+233+28"/*, new Polyfiter.GdxReflectionWrapper()*/), 266.6664266881124, 1);
     }
 
     @Test
