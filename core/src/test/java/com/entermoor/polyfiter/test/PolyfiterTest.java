@@ -21,7 +21,6 @@ public class PolyfiterTest {
         points.add(new Polyfit.Point2(-1, 1));
         points.add(new Polyfit.Point2(1, 7));
         String func = Polyfit.polyfit1(points);
-        System.out.println(func);
 
         assertEquals(MathExpressionParser.parseLine(new StringReader(func.replace("x", "2"))).eval(), 10, 0.01);
     }

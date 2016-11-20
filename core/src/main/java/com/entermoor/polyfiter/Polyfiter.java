@@ -21,7 +21,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.TimeUtils;
-import com.badlogic.gdx.utils.reflect.ClassReflection;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.entermoor.polyfiter.action.MoveCameraToAction;
@@ -77,7 +76,8 @@ public class Polyfiter extends ApplicationAdapter {
         Gdx.app.setLogLevel(Application.LOG_DEBUG);
 //        Gdx.app.debug("Working Directory", Gdx.files.internal("").file().getAbsolutePath());
 
-        Gdx.graphics.setWindowedMode(Gdx.graphics.getDisplayMode().width, Gdx.graphics.getDisplayMode().height);
+        //Gdx.graphics.setWindowedMode((int) (Gdx.graphics.getDisplayMode().width * 0.9), (int) (Gdx.graphics.getDisplayMode().height * 0.8));
+        Gdx.graphics.setWindowedMode(72,72);
 
         batch = new SpriteBatch();
 //		img = new Texture("badlogic.jpg");
@@ -107,7 +107,7 @@ public class Polyfiter extends ApplicationAdapter {
 
         touchpad = new Touchpad(Math.min(Gdx.graphics.getWidth(), Gdx.graphics.getHeight()) / 5, VisUI.getSkin());
         touchpad.getColor().a *= 0.233;
-        stage.addActor(touchpad);
+        // stage.addActor(touchpad);
 
         inputProcessor = new InputMultiplexer(stage, innerStage);
         Gdx.input.setInputProcessor(inputProcessor);
@@ -142,11 +142,12 @@ public class Polyfiter extends ApplicationAdapter {
                 return true;
             }
         });
-        points.add(new Polyfit.Point2(0, 0));
+        /* points.add(new Polyfit.Point2(0, 0));
         points.add(new Polyfit.Point2(1, 2));
         points.add(new Polyfit.Point2(5, 5));
         String func = Polyfit.polyfit1(points);
-        funcs.put(func, cacheValue(func));
+        funcs.put(func, cacheValue(func));*/
+        funcs.put("0.02*x*x-2",cacheValue("(x*x)-2"));
 
         GDXButtonDialog bDialog = GDXDialogsSystem.getDialogManager().newDialog(GDXButtonDialog.class);
         bDialog.setTitle("Buy a item");
@@ -193,16 +194,16 @@ public class Polyfiter extends ApplicationAdapter {
             innerCamera.translate(deltaX * scaleDelta, deltaY * scaleDelta);
         } else if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             scaleDelta += dScaleDelta(scaleDelta);
-            innerCamera.translate(-1 * scaleDelta, 0);
+            innerCamera.translate((float) (-0.1 * scaleDelta), 0);
         } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
             scaleDelta += dScaleDelta(scaleDelta);
-            innerCamera.translate(1 * scaleDelta, 0);
+            innerCamera.translate((float) (0.1 * scaleDelta), 0);
         } else if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
             scaleDelta += dScaleDelta(scaleDelta);
-            innerCamera.translate(0, 1 * scaleDelta);
+            innerCamera.translate(0, (float) (0.1 * scaleDelta));
         } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
             scaleDelta += dScaleDelta(scaleDelta);
-            innerCamera.translate(0, -1 * scaleDelta);
+            innerCamera.translate(0, (float) (-0.1 * scaleDelta));
         } else {
             scaleDelta = 1;
         }

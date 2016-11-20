@@ -5,6 +5,7 @@ import net.hakugyokurou.fds.parser.MathExpressionParser;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.util.Set;
 
 public abstract class Polyfit {
@@ -69,8 +70,11 @@ public abstract class Polyfit {
                 try {
                     innerResult = MathExpressionParser.parseLine(new StringReader(innerExpression)).eval();
                 } catch (InvalidExpressionException iee) {
-                    String innerinnerExpression = eatAPairOfBrackets(innerExpression);
-                    innerResult = parseSpecialFuncs(innerinnerExpression/*, reflectWrapper*/);
+                    // try {
+                        innerResult = parseSpecialFuncs(innerExpression/*, reflectWrapper*/);
+                    // } catch (StackOverflowError soe) {
+                    //    throw new IllegalArgumentException("Unable to parse " + expression, soe);
+                    //}
                 }
 
                 String funcName = funcPrefix;
@@ -81,12 +85,12 @@ public abstract class Polyfit {
                 }
                 double result = 0;
 
-                //Plan A: Reflect (@Deprecated)
+                // Plan A: Reflect (@Deprecated)
                 /*
                 double result = (Double) reflectWrapper.invoke(null, "java.lang.Math", funcName, innerResult);
                 return result;*/
 
-                //Plan B: invoke directly
+                // Plan B: invoke directly
                 if (funcName.equals("sin")) {
                     result = Math.sin(innerResult);
                 } else if (funcName.equals("cos")) {
@@ -112,13 +116,23 @@ public abstract class Polyfit {
                 }
 
                 int startIndex = expression.indexOf(funcPrefix);
-                int endIndex = expression.indexOf(innerExpression, startIndex) + innerExpression.length() + 1;//Avoid ")" again...
-                String cleanExpression = expression.replace(expression.substring(startIndex, endIndex), "" + result);
-                return MathExpressionParser.parseLine(new StringReader(cleanExpression)).eval();
+                int endIndex = expression.indexOf(innerExpression, startIndex) + innerExpression.length() + 1; // Avoid ")" again...
+                String cleanExpression = expression.replace(expression.substring(startIndex, endIndex), new BigDecimal(result).toPlainString());
+                double finalResult;
+                try {
+                    finalResult = MathExpressionParser.parseLine(new StringReader(cleanExpression)).eval();
+                } catch (InvalidExpressionException iee) {
+                    // try {
+                        finalResult = parseSpecialFuncs(cleanExpression);
+                    // } catch (StackOverflowError soe) {
+                    //     throw new IllegalArgumentException("Unable to parse " + expression, soe);
+                    // }
+                }
+                return finalResult;
             } catch (IllegalArgumentException ignored) {
             }
         }
-        throw new IllegalArgumentException("Unable to parse " + expression);
+        throw new IllegalArgumentException("Unable to parse " + expression + ", no supported function.");
     }
 
     public static String getExpressionInFunc(String wholeExpression, String funcPrefix) throws IOException {
@@ -148,6 +162,9 @@ public abstract class Polyfit {
         endIndex = startIndex;
         while (true) {
             tmp = (char) stringReader.read();
+            if ('\uFFFF' == tmp) {
+                throw new IllegalArgumentException("Incorrect expression: " + expressionWithBrackets);
+            }
             endIndex++;
             if ((tmp == '(')) {
                 nBracket++;
@@ -159,18 +176,7 @@ public abstract class Polyfit {
             }
         }
         endIndex--; //Avoid ')'
-        String eatenExpression = expressionWithBrackets.substring(startIndex, endIndex);
-        return eatenExpression;
-    }
-
-    public static String getExpressionInFunc(String wholeExpression) {
-        for (String funcPrefix : funcPrefixes) {
-            try {
-                return getExpressionInFunc(wholeExpression, funcPrefix);
-            } catch (IOException ignored) {
-            }
-        }
-        throw new IllegalArgumentException("Cannot find any known function prefix in " + wholeExpression);
+        return expressionWithBrackets.substring(startIndex, endIndex); // eaten expression
     }
 
     /*public interface ReflectWrapper {

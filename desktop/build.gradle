@@ -4,7 +4,6 @@ apply plugin: "java"
 sourceCompatibility = 1.6
 sourceSets.main.java.srcDirs = [ "src/main/java" ]
 
-project.ext.mainClassName = "com.entermoor.polyfiter.desktop.DesktopLauncher"
 project.ext.assetsDir = new File("../android/assets");
 
 /* task run(dependsOn: classes, type: JavaExec) {
@@ -13,7 +12,7 @@ project.ext.assetsDir = new File("../android/assets");
     standardInput = System.in
     workingDir = project.assetsDir
     ignoreExitValue = true
-} */
+}*/
 
 task dist(type: Jar) {
     from files(sourceSets.main.output.classesDir)
@@ -41,6 +40,7 @@ task proguard(type: proguard.gradle.ProGuardTask,dependsOn:dist) {
 }
 
 dist.dependsOn classes
+startScripts.dependsOn proguard
 
 eclipse {
     project {

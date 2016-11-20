@@ -3,9 +3,11 @@ buildscript {
         mavenLocal()
         mavenCentral()
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
-		maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+        maven { url "https://mini2dx.org/maven/content/repositories/thirdparty" }
+        maven { url "https://mini2dx.org/maven/content/repositories/releases" }
         jcenter()
-		// maven { url "https://palantir.bintray.com/releases/" }
+        // maven { url "https://palantir.bintray.com/releases/" }
         // maven { url uri(System.getenv("INTEL_MULTI_OS_ENGINE_HOME") + "/gradle") }
     }
     dependencies {
@@ -16,7 +18,7 @@ buildscript {
         classpath "com.jtransc:jtransc-gradle-plugin:0.4.0"
         classpath 'net.sf.proguard:proguard-gradle:5.2.1'
         classpath 'ca.coglinc:javacc-gradle-plugin:2.3.1'
-		// classpath "com.palantir.gradle.javadist:gradle-java-distribution:1.1.0"
+        classpath 'org.mini2Dx:parcl:1.0.10'
     }
 }
 
@@ -42,14 +44,15 @@ allprojects {
         mavenCentral()
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
         maven { url "https://oss.sonatype.org/content/repositories/releases/" }
-		jcenter()
-		// maven { url "https://palantir.bintray.com/releases/" }
+        jcenter()
+        // maven { url "https://palantir.bintray.com/releases/" }
     }
 }
 
 project(":desktop") {
     apply plugin: "java"
-	// apply plugin: 'com.palantir.java-distribution'
+    apply plugin: "application"
+    apply plugin: "org.mini2Dx.parcl"
 
     dependencies {
         compile project(":core")
@@ -57,12 +60,30 @@ project(":desktop") {
         compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
         compile "de.tomgrill.gdxdialogs:gdx-dialogs-desktop:$gdxDialogsVersion"
     }
-	/*
-	distribution {
-        serviceName 'Polyfiter'
-        mainClass 'com.entermoor.polyfiter.desktop.DesktopLauncher'
+
+    project.ext.mainClassName = "com.entermoor.polyfiter.desktop.DesktopLauncher"
+    mainClassName = project.ext.mainClassName
+    project.convention.plugins.application.mainClassName = mainClassName
+
+    parcl {
+        // main = project.ext.mainClassName
+        exe {
+            exeName = project.ext.appName + "-" + project.version
+        }
+
+        app {
+            appName = project.ext.appName
+            icon = "icon.hqx"
+            applicationCategory = "public.app-category.utilities"
+            displayName = project.ext.appName
+            identifier = 'com.entermoor.apple.identifier'
+            copyright = 'Copyright 2016 Entermoor Studio'
+        }
+
+        linux {
+            binName = project.ext.appName + "-" + project.version
+        }
     }
-	*/
 }
 
 project(":android") {
