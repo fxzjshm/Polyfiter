@@ -39,8 +39,24 @@ task proguard(type: proguard.gradle.ProGuardTask,dependsOn:dist) {
     configuration 'proguard-desktop.txt'
 }
 
+/*
+task deleteUselessJars(type: Delete, dependsOn:installApp) {
+    delete 'build/install/desktop/lib/', 'build/libs/desktop-${version}.jar'
+}
+
+task makeAnDir(dependsOn:deleteUselessJars) {
+    new File('build/install/desktop/lib/').mkdir()
+}
+
+task copyNewJar(type: Copy, dependsOn:makeAnDir) {
+   from 'build/libs/desktop-$version-proguard.jar'
+   into 'build/install/desktop/lib/'
+}
+*/
+
 dist.dependsOn classes
 startScripts.dependsOn proguard
+// bundleNative.dependsOn copyNewJar
 
 eclipse {
     project {
