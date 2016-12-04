@@ -58,12 +58,12 @@ public abstract class Polyfit {
      * @param points Given points
      * @return "k*[funcName](x)+b"
      */
-    public static String polyfitSpecialFunc(String funcName,Set<Point2> points) {
+    public static String polyfitSpecialFunc(String funcName, Set<Point2> points) {
         Set<Point2> specialPoints = new LinkedHashSet<Point2>(points.size());
         for (Point2 point : points) {
-            specialPoints.add(new Point2(point.x, runSpecialFunc(funcName,point.x)));
+            specialPoints.add(new Point2(point.x, runSpecialFunc(funcName, point.x)));
         }
-        return polyfit1(specialPoints).replace("x", funcName+"(x)");
+        return polyfit1(specialPoints).replace("x", funcName + "(x)");
     }
 
     public static double parseSpecialFuncs(String expression/*, ReflectWrapper reflectWrapper*/) throws IOException {
@@ -82,11 +82,13 @@ public abstract class Polyfit {
                 }
 
                 String funcName = funcPrefix;
+                /*
                 if (funcPrefix.startsWith("arc")) {
                     funcName = funcPrefix.replace("arc", "a");
                 } else if (funcPrefix.startsWith("ln")) {
                     funcName = "log";
                 }
+                */
                 double result = 0;
 
                 // Plan A: Reflect (@Deprecated)
@@ -125,13 +127,13 @@ public abstract class Polyfit {
             result = Math.cos(input);
         } else if (funcName.equals("tan")) {
             result = Math.tan(input);
-        } else if (funcName.equals("asin")) {
+        } else if (funcName.equals("asin") || funcName.equals("arcsin")) {
             result = Math.asin(input);
-        } else if (funcName.equals("acos")) {
+        } else if (funcName.equals("acos") || funcName.equals("arccos")) {
             result = Math.acos(input);
-        } else if (funcName.equals("atan")) {
+        } else if (funcName.equals("atan") || funcName.equals("arctan")) {
             result = Math.atan(input);
-        } else if (funcName.equals("log")) {
+        } else if (funcName.equals("ln")) {
             result = Math.log(input);
         } else if (funcName.equals("exp")) {
             result = Math.exp(input);
