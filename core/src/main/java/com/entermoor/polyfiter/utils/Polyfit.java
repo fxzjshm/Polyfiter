@@ -6,6 +6,7 @@ import net.hakugyokurou.fds.parser.MathExpressionParser;
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 public abstract class Polyfit {
@@ -25,6 +26,7 @@ public abstract class Polyfit {
      * <p>
      * b = avgY - k * avgX;
      * ==> f(x) = k * x + b;
+     * </p>
      *
      * @param points Given points
      * @return "k*x+b"
@@ -52,15 +54,17 @@ public abstract class Polyfit {
         return "(" + k + ")*(x)+(" + b + ")";
     }
 
-    /*
-     * ==> f(x) = k * ln(x) + b;
-     *
+    /**
      * @param points Given points
-     * @return "k*x+b"
+     * @return "k*[funcName](x)+b"
      */
-    //public static String polyfitln(Set<Point2> points) {
-
-    //}
+    public static String polyfitSpecialFunc(String funcName,Set<Point2> points) {
+        Set<Point2> specialPoints = new LinkedHashSet<Point2>(points.size());
+        for (Point2 point : points) {
+            specialPoints.add(new Point2(point.x, runSpecialFunc(funcName,point.x)));
+        }
+        return polyfit1(specialPoints).replace("x", funcName+"(x)");
+    }
 
     public static double parseSpecialFuncs(String expression/*, ReflectWrapper reflectWrapper*/) throws IOException {
         for (String funcPrefix : funcPrefixes) {
@@ -71,7 +75,7 @@ public abstract class Polyfit {
                     innerResult = MathExpressionParser.parseLine(new StringReader(innerExpression)).eval();
                 } catch (InvalidExpressionException iee) {
                     // try {
-                        innerResult = parseSpecialFuncs(innerExpression/*, reflectWrapper*/);
+                    innerResult = parseSpecialFuncs(innerExpression/*, reflectWrapper*/);
                     // } catch (StackOverflowError soe) {
                     //    throw new IllegalArgumentException("Unable to parse " + expression, soe);
                     //}
@@ -91,29 +95,7 @@ public abstract class Polyfit {
                 return result;*/
 
                 // Plan B: invoke directly
-                if (funcName.equals("sin")) {
-                    result = Math.sin(innerResult);
-                } else if (funcName.equals("cos")) {
-                    result = Math.cos(innerResult);
-                } else if (funcName.equals("tan")) {
-                    result = Math.tan(innerResult);
-                } else if (funcName.equals("asin")) {
-                    result = Math.asin(innerResult);
-                } else if (funcName.equals("acos")) {
-                    result = Math.acos(innerResult);
-                } else if (funcName.equals("atan")) {
-                    result = Math.atan(innerResult);
-                } else if (funcName.equals("log")) {
-                    result = Math.log(innerResult);
-                } else if (funcName.equals("exp")) {
-                    result = Math.exp(innerResult);
-                } else if (funcName.equals("log10")) {
-                    result = Math.log10(innerResult);
-                } else if (funcName.equals("sqrt")) {
-                    result = Math.sqrt(innerResult);
-                } else if (funcName.equals("abs")) {
-                    result = Math.abs(innerResult);
-                }
+                result = runSpecialFunc(funcName, innerResult);
 
                 int startIndex = expression.indexOf(funcPrefix);
                 int endIndex = expression.indexOf(innerExpression, startIndex) + innerExpression.length() + 1; // Avoid ")" again...
@@ -123,7 +105,7 @@ public abstract class Polyfit {
                     finalResult = MathExpressionParser.parseLine(new StringReader(cleanExpression)).eval();
                 } catch (InvalidExpressionException iee) {
                     // try {
-                        finalResult = parseSpecialFuncs(cleanExpression);
+                    finalResult = parseSpecialFuncs(cleanExpression);
                     // } catch (StackOverflowError soe) {
                     //     throw new IllegalArgumentException("Unable to parse " + expression, soe);
                     // }
@@ -133,6 +115,36 @@ public abstract class Polyfit {
             }
         }
         throw new IllegalArgumentException("Unable to parse " + expression + ", no supported function.");
+    }
+
+    public static double runSpecialFunc(String funcName, double input) {
+        double result;
+        if (funcName.equals("sin")) {
+            result = Math.sin(input);
+        } else if (funcName.equals("cos")) {
+            result = Math.cos(input);
+        } else if (funcName.equals("tan")) {
+            result = Math.tan(input);
+        } else if (funcName.equals("asin")) {
+            result = Math.asin(input);
+        } else if (funcName.equals("acos")) {
+            result = Math.acos(input);
+        } else if (funcName.equals("atan")) {
+            result = Math.atan(input);
+        } else if (funcName.equals("log")) {
+            result = Math.log(input);
+        } else if (funcName.equals("exp")) {
+            result = Math.exp(input);
+        } else if (funcName.equals("log10")) {
+            result = Math.log10(input);
+        } else if (funcName.equals("sqrt")) {
+            result = Math.sqrt(input);
+        } else if (funcName.equals("abs")) {
+            result = Math.abs(input);
+        } else {
+            throw new IllegalArgumentException("Unknown function " + funcName);
+        }
+        return result;
     }
 
     public static String getExpressionInFunc(String wholeExpression, String funcPrefix) throws IOException {
@@ -147,7 +159,7 @@ public abstract class Polyfit {
     public static String eatAPairOfBrackets(String expressionWithBrackets) throws IOException {
         StringReader stringReader = new StringReader(expressionWithBrackets);
         char tmp;
-        int nBracket = 0, startIndex = 0, endIndex = 0;
+        int nBracket = 0, startIndex = 0, endIndex;
 
         //First, make sure we have read one braket '('.
         while (true) {
