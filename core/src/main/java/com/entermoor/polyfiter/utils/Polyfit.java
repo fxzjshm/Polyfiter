@@ -33,25 +33,25 @@ public abstract class Polyfit {
      */
     public static String polyfit1(Set<Point2> points) {
         int n = points.size();
-        float sigmaX = 0;
-        float sigmaY = 0;
-        float sigmaXY = 0;
-        float sigmaX2 = 0;
+        BigDecimal sigmaX = new BigDecimal(0);
+        BigDecimal sigmaY = new BigDecimal(0);
+        BigDecimal sigmaXY = new BigDecimal(0);
+        BigDecimal sigmaX2 = new BigDecimal(0);
 
         for (Point2 point : points) {
-            sigmaX += point.x;
-            sigmaY += point.y;
-            sigmaXY += point.x * point.y;
-            sigmaX2 += point.x * point.x;
+            sigmaX = sigmaX.add(point.x);
+            sigmaY = sigmaY.add(point.y);
+            sigmaXY = sigmaXY.add(point.x.multiply(point.y));
+            sigmaX2 = sigmaX2.add(point.x.multiply(point.x));
         }
 
-        float avgX = sigmaX / n;
-        float avgY = sigmaY / n;
+        BigDecimal avgX = sigmaX.divide(new BigDecimal(n), 10, BigDecimal.ROUND_HALF_UP);
+        BigDecimal avgY = sigmaY.divide(new BigDecimal(n), 10, BigDecimal.ROUND_HALF_UP);
 
-        float k = (sigmaXY - n * avgX * avgY) / (sigmaX2 - n * avgX * avgX);
-        float b = avgY - k * avgX;
+        BigDecimal k = sigmaXY.subtract(avgX.multiply(avgY.multiply(new BigDecimal(n)))).divide(sigmaX2.subtract(avgX.multiply(avgX.multiply(new BigDecimal(n)))), BigDecimal.ROUND_HALF_EVEN);
+        BigDecimal b = avgY.subtract(k.multiply(avgX));
 
-        return "(" + k + ")*(x)+(" + b + ")";
+        return "(" + k.toPlainString() + ")*(x)+(" + b.toPlainString() + ")";
     }
 
     /**
@@ -61,7 +61,7 @@ public abstract class Polyfit {
     public static String polyfitSpecialFunc(String funcName, Set<Point2> points) {
         Set<Point2> specialPoints = new LinkedHashSet<Point2>(points.size());
         for (Point2 point : points) {
-            specialPoints.add(new Point2(point.x, runSpecialFunc(funcName, point.x)));
+            specialPoints.add(new Point2(new BigDecimal(runSpecialFunc(funcName, point.x.doubleValue())), point.y));
         }
         return polyfit1(specialPoints).replace("x", funcName + "(x)");
     }
@@ -70,12 +70,12 @@ public abstract class Polyfit {
         for (String funcPrefix : funcPrefixes) {
             try {
                 String innerExpression = getExpressionInFunc(expression, funcPrefix);
-                double innerResult;
+                BigDecimal innerResult;
                 try {
-                    innerResult = MathExpressionParser.parseLine(new StringReader(innerExpression)).eval();
+                    innerResult = new BigDecimal(MathExpressionParser.parseLine(new StringReader(innerExpression)).eval());
                 } catch (InvalidExpressionException iee) {
                     // try {
-                    innerResult = parseSpecialFuncs(innerExpression/*, reflectWrapper*/);
+                    innerResult = new BigDecimal(parseSpecialFuncs(innerExpression/*, reflectWrapper*/));
                     // } catch (StackOverflowError soe) {
                     //    throw new IllegalArgumentException("Unable to parse " + expression, soe);
                     //}
@@ -97,7 +97,7 @@ public abstract class Polyfit {
                 return result;*/
 
                 // Plan B: invoke directly
-                result = runSpecialFunc(funcName, innerResult);
+                result = runSpecialFunc(funcName, innerResult.doubleValue());
 
                 int startIndex = expression.indexOf(funcPrefix);
                 int endIndex = expression.indexOf(innerExpression, startIndex) + innerExpression.length() + 1; // Avoid ")" again...
@@ -198,11 +198,16 @@ public abstract class Polyfit {
     }*/
 
     public static class Point2 {
-        public double x = 0, y = 0;
+        public BigDecimal x = new BigDecimal(0), y = new BigDecimal(0);
 
-        public Point2(double x, double y) {
+        public Point2(BigDecimal x, BigDecimal y) {
             this.x = x;
             this.y = y;
+        }
+
+        public Point2(long x, long y) {
+            this.x = new BigDecimal(x);
+            this.y = new BigDecimal(y);
         }
     }
 

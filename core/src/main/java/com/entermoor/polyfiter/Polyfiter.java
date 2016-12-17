@@ -31,6 +31,7 @@ import net.hakugyokurou.fds.node.InvalidExpressionException;
 import net.hakugyokurou.fds.parser.MathExpressionParser;
 
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -76,8 +77,7 @@ public class Polyfiter extends ApplicationAdapter {
         Gdx.app.setLogLevel(Application.LOG_DEBUG);
 //        Gdx.app.debug("Working Directory", Gdx.files.internal("").file().getAbsolutePath());
 
-        //Gdx.graphics.setWindowedMode((int) (Gdx.graphics.getDisplayMode().width * 0.9), (int) (Gdx.graphics.getDisplayMode().height * 0.8));
-        Gdx.graphics.setWindowedMode(72,72);
+        Gdx.graphics.setWindowedMode((int) (Gdx.graphics.getDisplayMode().width * 0.9), (int) (Gdx.graphics.getDisplayMode().height * 0.8));
 
         batch = new SpriteBatch();
 //		img = new Texture("badlogic.jpg");
@@ -147,7 +147,7 @@ public class Polyfiter extends ApplicationAdapter {
         points.add(new Polyfit.Point2(5, 5));
         String func = Polyfit.polyfit1(points);
         funcs.put(func, cacheValue(func));*/
-        funcs.put("0.02*x*x-2",cacheValue("(x*x)-2"));
+        funcs.put("0.02*x*x-2", cacheValue("(x*x)-2"));
 
         GDXButtonDialog bDialog = GDXDialogsSystem.getDialogManager().newDialog(GDXButtonDialog.class);
         bDialog.setTitle("Buy a item");
@@ -230,12 +230,12 @@ public class Polyfiter extends ApplicationAdapter {
         shapeRenderer.setColor(pointColor);
         shapeRenderer.circle(0, 0, 6.66F);
         for (Polyfit.Point2 point : points) {
-            shapeRenderer.circle((float) point.x, (float) point.y, 2.33F);
+            shapeRenderer.circle((float) point.x.doubleValue(), (float) point.y.doubleValue(), 2.33F);
         }
         shapeRenderer.setColor(lineColor);
         for (Map.Entry<String, Set<Polyfit.Point2>> entry : funcs.entrySet()) {
             for (Polyfit.Point2 point : entry.getValue()) {
-                shapeRenderer.circle((float) point.x, (float) point.y, 1);
+                shapeRenderer.circle((float) point.x.doubleValue(), (float) point.y.doubleValue(), 1);
             }
         }
 //        shapeRenderer.circle(innerCamera.position.x - Gdx.graphics.getWidth() / 2, 0, 10);
@@ -262,7 +262,7 @@ public class Polyfiter extends ApplicationAdapter {
                 float x = (float) (innerCamera.position.x - Gdx.graphics.getWidth() / 2 + deltaX * i * 2);
                 String expression = func.replace("x", "" + x);
                 float y = (float) MathExpressionParser.parseLine(new StringReader(expression)).eval();
-                values.add(new Polyfit.Point2(x, y));
+                values.add(new Polyfit.Point2(new BigDecimal(x), new BigDecimal(y)));
             } catch (InvalidExpressionException iee) {
                 Gdx.app.debug("CacheValue", "Failed to cache " + func + ", x=" + i + "\n", iee);
             }

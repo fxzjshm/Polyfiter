@@ -1,0 +1,18 @@
+machine:
+  java:
+    version: oraclejdk8
+	
+dependencies:
+  cache_directories:
+    - "$HOME/.moe"
+    - "$HOME/.gradle/caches"
+    - "$HOME/.gradle/wrapper"
+  override:
+    - cd core && ../gradlew dependencies && cd ..
+	
+test:
+  override:
+    - cd core && ../gradlew test && cd ..
+  post:
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+    - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;

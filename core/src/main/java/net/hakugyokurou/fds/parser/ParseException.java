@@ -23,11 +23,7 @@ public class ParseException extends Exception {
   /**
    * The end of line string for this machine.
    */
-  protected static String EOL = System.getProperty("line.separator");
-    static {
-        if (EOL == null || EOL.startsWith("Unknown"))
-            EOL = "\n";
-    }
+  protected static String EOL = "\n";
 
   /**
    * This constructor is used by the method "generateParseException"
