@@ -1,7 +1,6 @@
 machine:
   java:
     version: oraclejdk8
-	
 dependencies:
   cache_directories:
     - "$HOME/.moe"
@@ -9,7 +8,6 @@ dependencies:
     - "$HOME/.gradle/wrapper"
   override:
     - cd core && ../gradlew dependencies && cd ..
-	
 test:
   override:
     - cd core && ../gradlew test && cd ..

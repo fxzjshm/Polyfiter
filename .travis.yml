@@ -12,5 +12,8 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 
+install:
+  - cd core && ../gradlew dependencies && cd ..
+
 script:
   - cd core && ../gradlew test && cd ..
