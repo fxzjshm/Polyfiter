@@ -4,9 +4,9 @@ machine:
 	
 dependencies:
   cache_directories:
-    - "$HOME/.moe"
-    - "$HOME/.gradle/caches"
-    - "$HOME/.gradle/wrapper"
+    - "/home/ubuntu/.moe"
+    - "/home/ubuntu/.gradle/caches"
+    - "/home/ubuntu/.gradle/wrapper"
   override:
     - cd core && ../gradlew dependencies && cd ..
 	
