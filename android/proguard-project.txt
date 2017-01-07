@@ -59,3 +59,6 @@
 -keep class com.badlogic.gdx.graphics.Color { *;}
 -keep class **Style { *;}
 -keep class com.kotcrab.vis.ui.Sizes { *;}
+
+#For something in GdxDialogs
+-keep class com.badlogic.gdx.Gdx { *;}

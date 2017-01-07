@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<application xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<mainClassName>com.entermoor.polyfiter.desktop.DesktopLauncher</mainClassName>
+<includesJre>false</includesJre>
+<classpath>
+<jar>desktop.jar</jar>
+</classpath>
+<vmArgs />
+<appArgs />
+</application>

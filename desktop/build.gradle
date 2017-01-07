@@ -34,25 +34,27 @@ task proguard(type: proguard.gradle.ProGuardTask,dependsOn:dist) {
 
     }*/
     injars new File("build/libs/desktop-${version}.jar")
-    outjars new File("build/libs/desktop-$version-proguard.jar")
+    outjars new File("build/proguard/desktop-$version-proguard.jar")
     configuration '../android/proguard-project.txt'
     configuration 'proguard-desktop.txt'
 }
 
-/*
-task deleteUselessJars(type: Delete, dependsOn:installApp) {
-    delete 'build/install/desktop/lib/', 'build/libs/desktop-${version}.jar'
+task deleteOldJar(type: Delete, dependsOn:proguard) {
+    outputs.upToDateWhen { false }
+    delete 'launcher/libs/'
 }
 
-task makeAnDir(dependsOn:deleteUselessJars) {
-    new File('build/install/desktop/lib/').mkdir()
+task copyNewJar(type: Copy, dependsOn:deleteOldJar) {
+    outputs.upToDateWhen { false }
+    from 'build/proguard'
+    into 'launcher/libs/'
+	// include 'desktop-$version-proguard.jar'
+	rename ('.*', 'desktop.jar')
 }
 
-task copyNewJar(type: Copy, dependsOn:makeAnDir) {
-   from 'build/libs/desktop-$version-proguard.jar'
-   into 'build/install/desktop/lib/'
+task releaseApplication(dependsOn:copyNewJar) {
+
 }
-*/
 
 dist.dependsOn classes
 startScripts.dependsOn proguard

@@ -18,6 +18,7 @@ import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.TimeUtils;
@@ -60,6 +61,7 @@ public class Polyfiter extends ApplicationAdapter {
     public OrthographicCamera innerCamera;
     public Image img;
     public ShapeRenderer shapeRenderer;
+    public ImageButton buttonAdd;
 
     public Color pointColor, xColor, yColor, lineColor;
     public float scaleDelta = 1;
@@ -98,7 +100,7 @@ public class Polyfiter extends ApplicationAdapter {
 
         try {
             GDXDialogsSystem.getDialogManager();
-        } catch (NullPointerException e) {
+        } catch (Throwable e) {
             GDXDialogsSystem.install();
         }
 
@@ -107,7 +109,11 @@ public class Polyfiter extends ApplicationAdapter {
 
         touchpad = new Touchpad(Math.min(Gdx.graphics.getWidth(), Gdx.graphics.getHeight()) / 5, VisUI.getSkin());
         touchpad.getColor().a *= 0.233;
-        // stage.addActor(touchpad);
+        stage.addActor(touchpad);
+
+        buttonAdd = new ImageButton(VisUI.getSkin());
+        buttonAdd.setBounds(Gdx.graphics.getWidth() * 9 / 10, Gdx.graphics.getHeight() * 9 / 10, Gdx.graphics.getWidth() / 10, Gdx.graphics.getHeight() / 10);
+        stage.addActor(buttonAdd);
 
         inputProcessor = new InputMultiplexer(stage, innerStage);
         Gdx.input.setInputProcessor(inputProcessor);

@@ -159,6 +159,10 @@ public abstract class Polyfit {
     }
 
     public static String eatAPairOfBrackets(String expressionWithBrackets) throws IOException {
+        return eatAPairOfBrackets(expressionWithBrackets,'(',')');
+        }
+
+    public static String eatAPairOfBrackets(String expressionWithBrackets, char start, char end) throws IOException {
         StringReader stringReader = new StringReader(expressionWithBrackets);
         char tmp;
         int nBracket = 0, startIndex = 0, endIndex;
@@ -167,7 +171,7 @@ public abstract class Polyfit {
         while (true) {
             tmp = (char) stringReader.read();
             startIndex++;
-            if ((tmp == '(')) {
+            if ((tmp == start)) {
                 nBracket++;
                 break;
             }
@@ -180,9 +184,9 @@ public abstract class Polyfit {
                 throw new IllegalArgumentException("Incorrect expression: " + expressionWithBrackets);
             }
             endIndex++;
-            if ((tmp == '(')) {
+            if ((tmp == start)) {
                 nBracket++;
-            } else if (tmp == ')') {
+            } else if (tmp == end) {
                 nBracket--;
             }
             if (nBracket == 0) {

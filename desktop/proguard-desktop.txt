@@ -17,5 +17,5 @@ public static void main(java.lang.String[]);
 -keep class org.** { *; }
 #-keepclassmembers class org.**
 
--dontwarn org.**
--dontoptimize
+# -dontwarn org.**
+# -dontoptimize
