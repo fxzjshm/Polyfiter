@@ -18,6 +18,7 @@ public class SpecialFunctionsTest {
         // Wrong things
         try {
             Polyfit.parseSpecialFuncs("idontexist(233)+666");
+            Polyfit.runSpecialFunc("idontexist",233);
             Assert.assertFalse(e, true);
         } catch (IllegalArgumentException ignored) {
         }

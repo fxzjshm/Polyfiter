@@ -62,3 +62,6 @@
 
 #For something in GdxDialogs
 -keep class com.badlogic.gdx.Gdx { *;}
+
+-dontoptimize
+-dontusemixedcaseclassnames

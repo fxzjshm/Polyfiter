@@ -5,7 +5,6 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -13,6 +12,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -48,9 +48,10 @@ public class Polyfiter extends ApplicationAdapter {
 
     public Set<Polyfit.Point2> points = new LinkedHashSet<Polyfit.Point2>();
     public Map<String, Set<Polyfit.Point2>> funcs = new LinkedHashMap<String, Set<Polyfit.Point2>>();
+    public Set<Runnable> resizeToDo =new LinkedHashSet<Runnable>();
 
     public SpriteBatch batch;
-    public InputProcessor inputProcessor;
+    public InputMultiplexer inputProcessor;
 
     public Stage stage;
     public Viewport viewport;
@@ -65,39 +66,76 @@ public class Polyfiter extends ApplicationAdapter {
 
     public Color pointColor, xColor, yColor, lineColor;
     public float scaleDelta = 1;
-//    public float dScaleDelta = 0.15F;
 
     public long padLastTouchTime = -1;
-    public int nCachedPointMin = 1000;
+    public int nCachedPointMax = 10000;
 
     public static float dScaleDelta(float scaleDelta) {
         return (float) 23.3 / scaleDelta;
     }
 
+    /**
+     * @param oldStage will be disposed.
+     * @return newStage
+     * @deprecated Some settigns will not be copied.
+     */
+    public static Stage copyStage(Stage oldStage, Stage newStage) {
+        for (Actor actor : oldStage.getActors()) {
+            newStage.addActor(actor);
+        }
+        oldStage.dispose();
+        return newStage;
+    }
+
     @Override
     public void create() {
         Gdx.app.setLogLevel(Application.LOG_DEBUG);
-//        Gdx.app.debug("Working Directory", Gdx.files.internal("").file().getAbsolutePath());
-
         Gdx.graphics.setWindowedMode((int) (Gdx.graphics.getDisplayMode().width * 0.9), (int) (Gdx.graphics.getDisplayMode().height * 0.8));
 
         batch = new SpriteBatch();
-//		img = new Texture("badlogic.jpg");
         viewport = new ScreenViewport();
         stage = new Stage(viewport, batch);
         stage.setDebugAll(true);
+        resizeToDo.add(new Runnable() {
+            @Override
+            public void run() {
+                inputProcessor.removeProcessor(stage);
+                Stage newStage = new Stage(viewport, batch);
+                newStage = copyStage(newStage, stage);
+                newStage.setDebugAll(true);
+                stage = newStage;
+                inputProcessor.addProcessor(stage);
+            }
+        });
 
-        innerCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight() / 5 * 3);
+        innerCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         innerViewport = new ScreenViewport(innerCamera);
         innerStage = new Stage(innerViewport, batch);
         innerStage.setDebugAll(true);
         shapeRenderer = new ShapeRenderer();
+        resizeToDo.add(new Runnable() {
+            @Override
+            public void run() {
+                innerViewport.update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+                viewport.update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            }
+        });
+
+        resizeToDo.add(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (lock) {
+                    for (Map.Entry<String, Set<Polyfit.Point2>> entry : funcs.entrySet()) {
+                        entry.setValue(cacheValue(entry.getKey()));
+                    }
+                }
+            }
+        });
 
         //Avoid exception on hot swap.
         if (VisUI.isLoaded())
             VisUI.dispose();
         VisUI.load();
-
         try {
             GDXDialogsSystem.getDialogManager();
         } catch (Throwable e) {
@@ -107,13 +145,26 @@ public class Polyfiter extends ApplicationAdapter {
         img = new Image(new TextureRegionDrawable(new TextureRegion(new Texture("badlogic.jpg"))));
         innerStage.addActor(img);
 
-        touchpad = new Touchpad(Math.min(Gdx.graphics.getWidth(), Gdx.graphics.getHeight()) / 5, VisUI.getSkin());
+        touchpad = new Touchpad(0, VisUI.getSkin());
         touchpad.getColor().a *= 0.233;
         stage.addActor(touchpad);
+        resizeToDo.add(new Runnable() {
+            @Override
+            public void run() {
+                int min=Math.min(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+                touchpad.setBounds(min / 11, min / 11, min / 7 * 2, min / 7 * 2);
+            }
+        });
 
         buttonAdd = new ImageButton(VisUI.getSkin());
         buttonAdd.setBounds(Gdx.graphics.getWidth() * 9 / 10, Gdx.graphics.getHeight() * 9 / 10, Gdx.graphics.getWidth() / 10, Gdx.graphics.getHeight() / 10);
         stage.addActor(buttonAdd);
+        resizeToDo.add(new Runnable() {
+            @Override
+            public void run() {
+                buttonAdd.setBounds(Gdx.graphics.getWidth() * 9 / 10, Gdx.graphics.getHeight() * 9 / 10, Gdx.graphics.getWidth() / 10, Gdx.graphics.getHeight() / 10);
+            }
+        });
 
         inputProcessor = new InputMultiplexer(stage, innerStage);
         Gdx.input.setInputProcessor(inputProcessor);
@@ -148,42 +199,14 @@ public class Polyfiter extends ApplicationAdapter {
                 return true;
             }
         });
-        /* points.add(new Polyfit.Point2(0, 0));
-        points.add(new Polyfit.Point2(1, 2));
-        points.add(new Polyfit.Point2(5, 5));
-        String func = Polyfit.polyfit1(points);
-        funcs.put(func, cacheValue(func));*/
         funcs.put("0.02*x*x-2", cacheValue("(x*x)-2"));
-
-        GDXButtonDialog bDialog = GDXDialogsSystem.getDialogManager().newDialog(GDXButtonDialog.class);
-        bDialog.setTitle("Buy a item");
-        bDialog.setMessage("Do you want to buy the mozarella?");
-
-        bDialog.setClickListener(new ButtonClickListener() {
-
-            @Override
-            public void click(int button) {
-                // handle button click here
-            }
-        });
-
-        bDialog.addButton("No");
-        bDialog.addButton("Never");
-        bDialog.addButton("Yes, nomnom!");
-
-        bDialog.build().show();
     }
 
     @Override
     public void resize(int width, int height) {
         Gdx.app.debug("Resize", "Width: " + width + ", Height: " + height + ".");
-        //viewport.update(width, height);
-        touchpad.setDeadzone(0);
-        touchpad.setBounds(Math.min(width, height) / 11, Math.min(width, height) / 11, Math.min(width, height) / 7 * 2, Math.min(width, height) / 7 * 2);
-        synchronized (lock) {
-            for (Map.Entry<String, Set<Polyfit.Point2>> entry : funcs.entrySet()) {
-                entry.setValue(cacheValue(entry.getKey()));
-            }
+        for(Runnable runnable:resizeToDo){
+            runnable.run();
         }
     }
 
@@ -193,7 +216,7 @@ public class Polyfiter extends ApplicationAdapter {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         if (touchpad.isTouched()) {
-            // Gdx.app.debug("Touchpad", touchpad.getKnobPercentX() + ", " + touchpad.getKnobPercentY());
+            Gdx.app.debug("Touchpad", touchpad.getKnobPercentX() + ", " + touchpad.getKnobPercentY());
             float deltaX = touchpad.getKnobPercentX();
             float deltaY = touchpad.getKnobPercentY();
             scaleDelta += Math.abs((deltaX + deltaY)) / 20;
@@ -215,13 +238,9 @@ public class Polyfiter extends ApplicationAdapter {
         }
 
         stage.act();
-
-        batch.begin();
-//		batch.draw(img, 0, 0);
-        batch.end();
-
         innerCamera.update();
         shapeRenderer.setProjectionMatrix(innerCamera.combined);
+        shapeRenderer.end();
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(yColor);
         if (innerCamera.position.x - Gdx.graphics.getWidth() / 2 < 0 && innerCamera.position.x + Gdx.graphics.getWidth() / 2 > 0) {
@@ -259,37 +278,25 @@ public class Polyfiter extends ApplicationAdapter {
         VisUI.dispose();
     }
 
-    public Set cacheValue(String func) {
-        int n = Math.min(viewport.getScreenWidth(), nCachedPointMin);
-        Set<Polyfit.Point2> values = new LinkedHashSet<Polyfit.Point2>(n);
-        double deltaX = Gdx.graphics.getWidth() / n;
-        for (int i = 0; i <= n; i++) {
-            try {
-                float x = (float) (innerCamera.position.x - Gdx.graphics.getWidth() / 2 + deltaX * i * 2);
-                String expression = func.replace("x", "" + x);
-                float y = (float) MathExpressionParser.parseLine(new StringReader(expression)).eval();
-                values.add(new Polyfit.Point2(new BigDecimal(x), new BigDecimal(y)));
-            } catch (InvalidExpressionException iee) {
-                Gdx.app.debug("CacheValue", "Failed to cache " + func + ", x=" + i + "\n", iee);
-            }
-        }
-        return values;
-    }
-
-    /*public static class GdxReflectionWrapper implements Polyfit.ReflectWrapper {
-
-        @Override
-        public Object invoke(Object obj, String className, String methodName, Object... objects) {
-            try {
-                Class[] classes = new Class[objects.length];
-                for (int i = 0; i < objects.length; i++) {
-                    classes[i] = objects[i].getClass();
+    public Set<Polyfit.Point2> cacheValue(String func) {
+        int n = Math.min(viewport.getScreenWidth(), nCachedPointMax);
+        if (n > 0) {
+            Set<Polyfit.Point2> values = new LinkedHashSet<Polyfit.Point2>(n);
+            double deltaX = Gdx.graphics.getWidth() / n;
+            for (int i = 0; i <= n; i++) {
+                try {
+                    float x = (float) (innerCamera.position.x - Gdx.graphics.getWidth() / 2 + deltaX * i * 2);
+                    String expression = func.replace("x", "" + x);
+                    float y = (float) MathExpressionParser.parseLine(new StringReader(expression)).eval();
+                    if (y > innerCamera.position.y - Gdx.graphics.getHeight() / 2 && y < innerCamera.position.y + Gdx.graphics.getHeight() / 2)
+                        values.add(new Polyfit.Point2(new BigDecimal(x), new BigDecimal(y)));
+                } catch (InvalidExpressionException iee) {
+                    Gdx.app.debug("CacheValue", "Failed to cache " + func + ", x=" + i + "\n", iee);
                 }
-                return ClassReflection.forName(className).getDeclaredMethod(methodName, classes).invoke(obj, objects);
-            } catch (Exception e) {
-                throw new IllegalArgumentException("Error invoking " + className + "." + methodName + " (See log above)", e);
             }
+            return values;
         }
-    }*/
-
+        Gdx.app.error("Caching points", "Invalid amount " + n);
+        return null;
+    }
 }

@@ -74,29 +74,13 @@ public abstract class Polyfit {
                 try {
                     innerResult = new BigDecimal(MathExpressionParser.parseLine(new StringReader(innerExpression)).eval());
                 } catch (InvalidExpressionException iee) {
-                    // try {
-                    innerResult = new BigDecimal(parseSpecialFuncs(innerExpression/*, reflectWrapper*/));
-                    // } catch (StackOverflowError soe) {
-                    //    throw new IllegalArgumentException("Unable to parse " + expression, soe);
-                    //}
+                    innerResult = new BigDecimal(parseSpecialFuncs(innerExpression));
                 }
 
                 String funcName = funcPrefix;
-                /*
-                if (funcPrefix.startsWith("arc")) {
-                    funcName = funcPrefix.replace("arc", "a");
-                } else if (funcPrefix.startsWith("ln")) {
-                    funcName = "log";
-                }
-                */
                 double result = 0;
 
-                // Plan A: Reflect (@Deprecated)
-                /*
-                double result = (Double) reflectWrapper.invoke(null, "java.lang.Math", funcName, innerResult);
-                return result;*/
-
-                // Plan B: invoke directly
+                // invoke directly
                 result = runSpecialFunc(funcName, innerResult.doubleValue());
 
                 int startIndex = expression.indexOf(funcPrefix);
@@ -106,11 +90,7 @@ public abstract class Polyfit {
                 try {
                     finalResult = MathExpressionParser.parseLine(new StringReader(cleanExpression)).eval();
                 } catch (InvalidExpressionException iee) {
-                    // try {
                     finalResult = parseSpecialFuncs(cleanExpression);
-                    // } catch (StackOverflowError soe) {
-                    //     throw new IllegalArgumentException("Unable to parse " + expression, soe);
-                    // }
                 }
                 return finalResult;
             } catch (IllegalArgumentException ignored) {
@@ -197,10 +177,6 @@ public abstract class Polyfit {
         return expressionWithBrackets.substring(startIndex, endIndex); // eaten expression
     }
 
-    /*public interface ReflectWrapper {
-        Object invoke(Object obj, String className, String methodName, Object... objects);
-    }*/
-
     public static class Point2 {
         public BigDecimal x = new BigDecimal(0), y = new BigDecimal(0);
 
@@ -214,21 +190,4 @@ public abstract class Polyfit {
             this.y = new BigDecimal(y);
         }
     }
-
-    //Default wrapper -- not compatible with GWT.
-    /*public static class DesktopReflectionWrapper implements Polyfit.ReflectWrapper {
-
-        @Override
-        public Object invoke(Object obj, String className, String methodName, Object... objects) {
-            try {
-                Class[] classes = new Class[objects.length];
-                for (int i = 0; i < objects.length; i++) {
-                    classes[i] = objects[i].getClass();
-                }
-                return Class.forName(className).getDeclaredMethod(methodName, classes).invoke(obj, objects);
-            } catch (Exception e) {
-                throw new IllegalArgumentException("Error invoking " + className + "." + methodName + " (See log above)", e);
-            }
-        }
-    }*/
 }
