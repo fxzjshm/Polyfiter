@@ -13,6 +13,8 @@ import net.hakugyokurou.fds.node.OperationNode.Operation;
 import net.hakugyokurou.fds.node.RationalNode;
 
 import java.io.Reader;
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.ArrayList;
 
 public class MathExpressionParser implements MathExpressionParserConstants {
@@ -336,13 +338,13 @@ public class MathExpressionParser implements MathExpressionParserConstants {
             case INTEGER: {
                 t1 = jj_consume_token(INTEGER);
                 {
-                    return new RationalNode((double) Long.parseLong(t1.image));
+                    return new RationalNode(new BigDecimal(t1.image, OperationNode.mathContext));
                 }
             }
             case RATIONAL: {
                 t1 = jj_consume_token(RATIONAL);
                 {
-                    return new RationalNode(Double.parseDouble(t1.image));
+                    return new RationalNode(new BigDecimal(t1.image, OperationNode.mathContext));
                 }
             }
             case 12: {

@@ -1,5 +1,7 @@
 package net.hakugyokurou.fds.node;
 
+import java.math.BigDecimal;
+
 public class NegNode implements IEvaluable{
 
 	private IEvaluable child;
@@ -14,8 +16,8 @@ public class NegNode implements IEvaluable{
 	}
 	
 	@Override
-	public double eval() {
-		return -child.eval();
+	public BigDecimal eval() {
+		return child.eval().negate();
 	}
 
 	@Override

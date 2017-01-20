@@ -1,11 +1,13 @@
 package com.entermoor.polyfiter.utils;
 
 import net.hakugyokurou.fds.node.InvalidExpressionException;
+import net.hakugyokurou.fds.node.OperationNode;
 import net.hakugyokurou.fds.parser.MathExpressionParser;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -33,10 +35,10 @@ public abstract class Polyfit {
      */
     public static String polyfit1(Set<Point2> points) {
         int n = points.size();
-        BigDecimal sigmaX = new BigDecimal(0);
-        BigDecimal sigmaY = new BigDecimal(0);
-        BigDecimal sigmaXY = new BigDecimal(0);
-        BigDecimal sigmaX2 = new BigDecimal(0);
+        BigDecimal sigmaX = new BigDecimal(0, OperationNode.mathContext);
+        BigDecimal sigmaY = new BigDecimal(0, OperationNode.mathContext);
+        BigDecimal sigmaXY = new BigDecimal(0, OperationNode.mathContext);
+        BigDecimal sigmaX2 = new BigDecimal(0, OperationNode.mathContext);
 
         for (Point2 point : points) {
             sigmaX = sigmaX.add(point.x);
@@ -45,10 +47,10 @@ public abstract class Polyfit {
             sigmaX2 = sigmaX2.add(point.x.multiply(point.x));
         }
 
-        BigDecimal avgX = sigmaX.divide(new BigDecimal(n), 10, BigDecimal.ROUND_HALF_UP);
-        BigDecimal avgY = sigmaY.divide(new BigDecimal(n), 10, BigDecimal.ROUND_HALF_UP);
+        BigDecimal avgX = sigmaX.divide(new BigDecimal(n, OperationNode.mathContext), OperationNode.mathContext.getPrecision(), BigDecimal.ROUND_HALF_UP);
+        BigDecimal avgY = sigmaY.divide(new BigDecimal(n, OperationNode.mathContext), OperationNode.mathContext.getPrecision(), BigDecimal.ROUND_HALF_UP);
 
-        BigDecimal k = sigmaXY.subtract(avgX.multiply(avgY.multiply(new BigDecimal(n)))).divide(sigmaX2.subtract(avgX.multiply(avgX.multiply(new BigDecimal(n)))), BigDecimal.ROUND_HALF_EVEN);
+        BigDecimal k = sigmaXY.subtract(avgX.multiply(avgY.multiply(new BigDecimal(n, OperationNode.mathContext)))).divide(sigmaX2.subtract(avgX.multiply(avgX.multiply(new BigDecimal(n, OperationNode.mathContext)))), OperationNode.mathContext.getPrecision(), BigDecimal.ROUND_HALF_EVEN);
         BigDecimal b = avgY.subtract(k.multiply(avgX));
 
         return "(" + k.toPlainString() + ")*(x)+(" + b.toPlainString() + ")";
@@ -61,20 +63,20 @@ public abstract class Polyfit {
     public static String polyfitSpecialFunc(String funcName, Set<Point2> points) {
         Set<Point2> specialPoints = new LinkedHashSet<Point2>(points.size());
         for (Point2 point : points) {
-            specialPoints.add(new Point2(new BigDecimal(runSpecialFunc(funcName, point.x.doubleValue())), point.y));
+            specialPoints.add(new Point2(new BigDecimal(runSpecialFunc(funcName, point.x.doubleValue()), OperationNode.mathContext), point.y));
         }
         return polyfit1(specialPoints).replace("x", funcName + "(x)");
     }
 
-    public static double parseSpecialFuncs(String expression/*, ReflectWrapper reflectWrapper*/) throws IOException {
+    public static BigDecimal parseSpecialFuncs(String expression) throws IOException {
         for (String funcPrefix : funcPrefixes) {
             try {
                 String innerExpression = getExpressionInFunc(expression, funcPrefix);
                 BigDecimal innerResult;
                 try {
-                    innerResult = new BigDecimal(MathExpressionParser.parseLine(new StringReader(innerExpression)).eval());
+                    innerResult = MathExpressionParser.parseLine(new StringReader(innerExpression)).eval();
                 } catch (InvalidExpressionException iee) {
-                    innerResult = new BigDecimal(parseSpecialFuncs(innerExpression));
+                    innerResult = parseSpecialFuncs(innerExpression);
                 }
 
                 String funcName = funcPrefix;
@@ -85,8 +87,8 @@ public abstract class Polyfit {
 
                 int startIndex = expression.indexOf(funcPrefix);
                 int endIndex = expression.indexOf(innerExpression, startIndex) + innerExpression.length() + 1; // Avoid ")" again...
-                String cleanExpression = expression.replace(expression.substring(startIndex, endIndex), new BigDecimal(result).toPlainString());
-                double finalResult;
+                String cleanExpression = expression.replace(expression.substring(startIndex, endIndex), new BigDecimal(result, OperationNode.mathContext).toPlainString());
+                BigDecimal finalResult;
                 try {
                     finalResult = MathExpressionParser.parseLine(new StringReader(cleanExpression)).eval();
                 } catch (InvalidExpressionException iee) {
@@ -139,8 +141,8 @@ public abstract class Polyfit {
     }
 
     public static String eatAPairOfBrackets(String expressionWithBrackets) throws IOException {
-        return eatAPairOfBrackets(expressionWithBrackets,'(',')');
-        }
+        return eatAPairOfBrackets(expressionWithBrackets, '(', ')');
+    }
 
     public static String eatAPairOfBrackets(String expressionWithBrackets, char start, char end) throws IOException {
         StringReader stringReader = new StringReader(expressionWithBrackets);
@@ -178,7 +180,7 @@ public abstract class Polyfit {
     }
 
     public static class Point2 {
-        public BigDecimal x = new BigDecimal(0), y = new BigDecimal(0);
+        public BigDecimal x = new BigDecimal(0, OperationNode.mathContext), y = new BigDecimal(0, OperationNode.mathContext);
 
         public Point2(BigDecimal x, BigDecimal y) {
             this.x = x;
@@ -186,8 +188,8 @@ public abstract class Polyfit {
         }
 
         public Point2(long x, long y) {
-            this.x = new BigDecimal(x);
-            this.y = new BigDecimal(y);
+            this.x = new BigDecimal(x, OperationNode.mathContext);
+            this.y = new BigDecimal(y, OperationNode.mathContext);
         }
     }
 }

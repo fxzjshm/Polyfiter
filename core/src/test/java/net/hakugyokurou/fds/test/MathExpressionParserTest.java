@@ -52,7 +52,7 @@ public class MathExpressionParserTest {
 			assertEquals(count, exprs.size());
 			for(int i = 0; i < count; i++)
 			{
-				assertEquals(results.get(i), exprs.get(i).eval(), delta);
+				assertEquals(results.get(i), exprs.get(i).eval().doubleValue(), delta);
 			}
 		} finally {
 			reader.close();
@@ -66,7 +66,7 @@ public class MathExpressionParserTest {
 			StringReader reader = new StringReader(entry.getKey());
 			try {
 				MathExpression expression = MathExpressionParser.parseLine(reader);
-				assertEquals(entry.getValue(), expression.eval(), delta);
+				assertEquals(entry.getValue(), expression.eval().doubleValue(), delta);
 			} finally {
 				reader.close();
 			}

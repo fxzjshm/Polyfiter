@@ -1,5 +1,7 @@
 package net.hakugyokurou.fds.node;
 
+import java.math.BigDecimal;
+
 public class BracketNode implements IEvaluable {
 
 	private IEvaluable child;
@@ -14,7 +16,7 @@ public class BracketNode implements IEvaluable {
 	}
 	
 	@Override
-	public double eval() {
+	public BigDecimal eval() {
 		return child.eval();
 	}
 

@@ -24,7 +24,7 @@ public class PolyfiterTest {
         points.add(new Polyfit.Point2(1, 7));
         String func = Polyfit.polyfit1(points);
 
-        assertEquals(MathExpressionParser.parseLine(new StringReader(func.replace("x", "2"))).eval(), 10, 0.01);
+        assertEquals(MathExpressionParser.parseLine(new StringReader(func.replace("x", "2"))).eval().doubleValue(), 10, 0.01);
     }
 
     @Test
@@ -35,7 +35,7 @@ public class PolyfiterTest {
         points.add(new Polyfit.Point2(new BigDecimal(2), new BigDecimal("0.693147646807594")));
         String func = Polyfit.polyfitSpecialFunc("ln", points);
 
-        assertEquals(2.30258664183521, Polyfit.parseSpecialFuncs(func.replace("x", "10")), 0.01);
+        assertEquals(2.30258664183521, Polyfit.parseSpecialFuncs(func.replace("x", "10")).doubleValue(), 0.01);
     }
 
     @Test
@@ -46,6 +46,6 @@ public class PolyfiterTest {
         points.add(new Polyfit.Point2(10, 1));
         String func = Polyfit.polyfitSpecialFunc("log10", points);
 
-        assertEquals(0.301029995663981,Polyfit.parseSpecialFuncs(func.replace("x", "2")), 0.01);
+        assertEquals(0.301029995663981,Polyfit.parseSpecialFuncs(func.replace("x", "2")).doubleValue(), 0.01);
     }
 }

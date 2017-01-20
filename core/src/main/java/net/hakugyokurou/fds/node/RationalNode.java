@@ -1,22 +1,23 @@
 package net.hakugyokurou.fds.node;
 
+import java.math.BigDecimal;
+
 public class RationalNode implements IEvaluable {
 
-    private final double value;
+    private final BigDecimal value;
 
-    public RationalNode(double value) {
+    public RationalNode(BigDecimal value) {
         this.value = value;
     }
 
     @Override
-    public double eval() {
+    public BigDecimal eval() {
         return value;
     }
 
     @Override
     public String toString() {
-        long lv = (long) value;
-        return value == lv ? "" + lv : "" + value;
+        return value.toPlainString();
     }
 
     @Override

@@ -3,6 +3,8 @@ package net.hakugyokurou.fds;
 import net.hakugyokurou.fds.node.IEvaluable;
 import net.hakugyokurou.fds.node.InvalidExpressionException;
 
+import java.math.BigDecimal;
+
 public class MathExpression {
 
 	private IEvaluable root;
@@ -19,7 +21,7 @@ public class MathExpression {
 		this.root = root;
 	}
 	
-	public double eval() throws InvalidExpressionException {
+	public BigDecimal eval() throws InvalidExpressionException {
 		return root.eval();
 	}
 	

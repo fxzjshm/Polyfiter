@@ -31,10 +31,12 @@ import com.entermoor.polyfiter.utils.Polyfit;
 import com.kotcrab.vis.ui.VisUI;
 
 import net.hakugyokurou.fds.node.InvalidExpressionException;
+import net.hakugyokurou.fds.node.OperationNode;
 import net.hakugyokurou.fds.parser.MathExpressionParser;
 
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -88,9 +90,7 @@ public class Polyfiter extends ApplicationAdapter {
         for (int i = 0; i < pixmap.getWidth(); i++) {
             for (int j = 0; j < pixmap.getHeight(); j++) {
                 oldColor.set(pixmap.getPixel(i, j));
-                Gdx.app.debug("Filter",oldColor.toString());
-                newPixmap.drawPixel(i, j, newColor.set(oldColor.r * r, oldColor.g * g, oldColor.b * b, oldColor.a * a).toIntBits());
-                Gdx.app.debug("Filter",newColor.toString());
+                newPixmap.drawPixel(i, j, Color.rgba8888(oldColor.r * r, oldColor.g * g, oldColor.b * b, oldColor.a * a));
             }
         }
         return newPixmap;
@@ -225,7 +225,7 @@ public class Polyfiter extends ApplicationAdapter {
                 return true;
             }
         });
-        funcs.put("0.02*x*x-2", cacheValue("(x*x)-2"));
+        funcs.put("x+1000/x", cacheValue("x+1000/x"));
     }
 
     @Override
@@ -243,7 +243,6 @@ public class Polyfiter extends ApplicationAdapter {
 
         Camera innerCamera = innerStage.getViewport().getCamera();
         if (touchpad.isTouched()) {
-            Gdx.app.debug("Touchpad", touchpad.getKnobPercentX() + ", " + touchpad.getKnobPercentY());
             float deltaX = touchpad.getKnobPercentX();
             float deltaY = touchpad.getKnobPercentY();
             scaleDelta += Math.abs((deltaX + deltaY)) / 20;
@@ -311,15 +310,16 @@ public class Polyfiter extends ApplicationAdapter {
             Set<Polyfit.Point2> values = new LinkedHashSet<Polyfit.Point2>(n);
             double deltaX = Gdx.graphics.getWidth() / n;
             for (int i = 0; i <= n; i++) {
+                Vector3 position = innerStage.getViewport().getCamera().position;
+                float x = (float) (position.x - Gdx.graphics.getWidth() / 2 + deltaX * i * 2);
+                String expression = func.replace("x", "" + x);
                 try {
-                    Vector3 position = innerStage.getViewport().getCamera().position;
-                    float x = (float) (position.x - Gdx.graphics.getWidth() / 2 + deltaX * i * 2);
-                    String expression = func.replace("x", "" + x);
-                    float y = (float) MathExpressionParser.parseLine(new StringReader(expression)).eval();
-                    if (y > position.y - Gdx.graphics.getHeight() / 2 && y < position.y + Gdx.graphics.getHeight() / 2)
-                        values.add(new Polyfit.Point2(new BigDecimal(x), new BigDecimal(y)));
-                } catch (InvalidExpressionException iee) {
-                    Gdx.app.debug("CacheValue", "Failed to cache " + func + ", x=" + i + "\n", iee);
+                    float y = MathExpressionParser.parseLine(new StringReader(expression)).eval().floatValue();
+                    if (y > position.y - Gdx.graphics.getHeight() / 2 && y < position.y + Gdx.graphics.getHeight() / 2) {
+                        values.add(new Polyfit.Point2(new BigDecimal(x, OperationNode.mathContext), new BigDecimal(y, OperationNode.mathContext)));
+                    }
+                } catch (RuntimeException re) {
+                    Gdx.app.debug("CacheValue", "Failed to cache " + func + ", x=" + x + "\n", re);
                 }
             }
             return values;

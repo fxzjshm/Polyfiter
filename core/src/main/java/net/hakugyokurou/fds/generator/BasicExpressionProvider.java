@@ -2,6 +2,8 @@ package net.hakugyokurou.fds.generator;
 
 import static java.lang.Math.*;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.Random;
 
 import net.hakugyokurou.fds.MathExpression;
@@ -22,7 +24,7 @@ public abstract class BasicExpressionProvider implements IGeneratorProvider {
 				final int MAX = 10000;
 				int l = random.nextInt(MAX);
 				l = (int)(l * random.nextFloat() * context.difficulty3) + 1;
-				return new RationalNode(l);
+				return new RationalNode(new BigDecimal(l, OperationNode.mathContext));
 			}
 		},
 		RATIONAL {
@@ -32,7 +34,7 @@ public abstract class BasicExpressionProvider implements IGeneratorProvider {
 				int l = random.nextInt(MAX);
 				double f = l * random.nextDouble() * context.difficulty3;
 				//f = Math.round(f * 1000) * 0.001;
-				return new RationalNode(context.clampReal(f));
+				return new RationalNode(new BigDecimal(context.clampReal(f), OperationNode.mathContext));
 			}
 		},
 		FRACTION {

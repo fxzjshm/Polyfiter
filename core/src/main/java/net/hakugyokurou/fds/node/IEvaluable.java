@@ -1,8 +1,11 @@
 package net.hakugyokurou.fds.node;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+
 public interface IEvaluable {
 
-	double eval();
+	BigDecimal eval();
 	
 	void verify();
 }

@@ -7,13 +7,14 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.MathContext;
 
 public class SpecialFunctionsTest {
 
     @Test
     public void testSpecialFuncs() throws IOException {
         String e = "Polyfit.parseSpecialFuncs() failed!";
-        Assert.assertEquals(e, 266.6664266881124, Polyfit.parseSpecialFuncs("log10(100) * ln (sqrt(4) * ln(abs(-1096.6331584283305)) + sin(((arcsin(1)+arccos(0)+arctan(0))/2)) + 2) + 233 + 6 + 6 + 6 + tan(1.405657649) + ln(exp(4))"), 0.001);
+        Assert.assertEquals(e, 266.6664266881124, Polyfit.parseSpecialFuncs("log10(100) * ln (sqrt(4) * ln(abs(-1096.6331584283305)) + sin(((arcsin(1)+arccos(0)+arctan(0))/2)) + 2) + 233 + 6 + 6 + 6 + tan(1.405657649) + ln(exp(4))").doubleValue(), 0.001);
 
         // Wrong things
         try {
