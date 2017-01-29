@@ -69,6 +69,9 @@ public abstract class Polyfit {
     }
 
     public static BigDecimal parseSpecialFuncs(String expression) throws IOException {
+        try {
+            return MathExpressionParser.parseLine(new StringReader(expression)).eval();
+        } catch (InvalidExpressionException ignored) {}
         for (String funcPrefix : funcPrefixes) {
             try {
                 String innerExpression = getExpressionInFunc(expression, funcPrefix);

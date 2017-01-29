@@ -5,6 +5,7 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -20,29 +21,31 @@ import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.entermoor.polyfiter.action.MoveCameraToAction;
 import com.entermoor.polyfiter.utils.Polyfit;
 import com.kotcrab.vis.ui.VisUI;
 
-import net.hakugyokurou.fds.node.InvalidExpressionException;
 import net.hakugyokurou.fds.node.OperationNode;
-import net.hakugyokurou.fds.parser.MathExpressionParser;
 
-import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
 import de.tomgrill.gdxdialogs.core.GDXDialogsSystem;
+import de.tomgrill.gdxdialogs.core.dialogs.GDXProgressDialog;
+import de.tomgrill.gdxdialogs.core.dialogs.GDXTextPrompt;
+import de.tomgrill.gdxdialogs.core.listener.TextPromptListener;
 
 public class Polyfiter extends ApplicationAdapter {
 
@@ -61,14 +64,17 @@ public class Polyfiter extends ApplicationAdapter {
     public Stage innerStage;
     public Image img;
     public ShapeRenderer shapeRenderer;
-    public ImageButton buttonAdd;
-    public ImageButton buttonRefresh;
+    public Button buttonAdd;
+    public Button buttonRefresh;
+    public GDXProgressDialog dialogCaching;
+    public GDXTextPrompt dialogAdd;
 
     public Color pointColor, xColor, yColor, lineColor;
     public float scaleDelta = 1;
 
     public long padLastTouchTime = -1;
     public int nCachedPointMax = 10000;
+    public boolean drawFuncWhenTouched = false;
 
     public static float dScaleDelta(float scaleDelta) {
         return (float) 23.3 / scaleDelta;
@@ -86,7 +92,7 @@ public class Polyfiter extends ApplicationAdapter {
      */
     public static Pixmap filter(Pixmap pixmap, float r, float g, float b, float a) {
         Pixmap newPixmap = new Pixmap(pixmap.getWidth(), pixmap.getHeight(), pixmap.getFormat());
-        Color oldColor = new Color(), newColor = new Color();
+        Color oldColor = new Color();
         for (int i = 0; i < pixmap.getWidth(); i++) {
             for (int j = 0; j < pixmap.getHeight(); j++) {
                 oldColor.set(pixmap.getPixel(i, j));
@@ -113,15 +119,12 @@ public class Polyfiter extends ApplicationAdapter {
             public void run() {
                 inputProcessor.removeProcessor(stage);
                 Stage newStage = new Stage(stage.getViewport(), batch);
-                for (Actor actor : stage.getActors()) {
-                    stage.getRoot().removeActor(actor);
-                    newStage.addActor(actor);
-                }
+                for (Array<Actor> actors = stage.getActors(); actors.size > 0; )
+                    newStage.addActor(actors.pop());
                 stage.dispose();
                 newStage.setDebugAll(true);
                 stage = newStage;
                 inputProcessor.addProcessor(stage);
-                stage.addActor(buttonAdd);
             }
         });
 
@@ -136,6 +139,7 @@ public class Polyfiter extends ApplicationAdapter {
             }
         });
 
+        OperationNode.mathContext = new MathContext(5, RoundingMode.HALF_UP);
         resizeToDo.add(new Runnable() {
             @Override
             public void run() {
@@ -172,8 +176,16 @@ public class Polyfiter extends ApplicationAdapter {
         });
 
         Pixmap buttonAddUp = new Pixmap(Gdx.files.internal("plus.png"));
-        Pixmap buttonAddDown = filter(buttonAddUp, 0.8F, 0.8F, 1, 1);
-        buttonAdd = new ImageButton(drawable(buttonAddUp), drawable(buttonAddDown));
+        Pixmap buttonAddDown = filter(buttonAddUp, 0.233F, 0.233F, 0.666F, 1);
+        buttonAdd = new Button(drawable(buttonAddUp), drawable(buttonAddDown));
+        buttonAdd.addListener(new EventListener() {
+            @Override
+            public boolean handle(Event event) {
+                if (event instanceof InputEvent && ((InputEvent) event).getType().equals(InputEvent.Type.touchDown))
+                    dialogAdd.show();
+                return false;
+            }
+        });
         stage.addActor(buttonAdd);
         resizeToDo.add(new Runnable() {
             @Override
@@ -182,7 +194,18 @@ public class Polyfiter extends ApplicationAdapter {
                 buttonAdd.setBounds(Gdx.graphics.getWidth() - size, Gdx.graphics.getHeight() - size, size, size);
             }
         });
-        buttonRefresh = new ImageButton(VisUI.getSkin());
+        Pixmap buttonRefreshUp = new Pixmap(Gdx.files.internal("reload.png"));
+        Pixmap buttonRefreshDown = filter(buttonRefreshUp, 0.233F, 0.233F, 0.666F, 1);
+        buttonRefresh = new Button(drawable(buttonRefreshUp), drawable(buttonRefreshDown));
+        buttonRefresh.addListener(new EventListener() {
+            @Override
+            public boolean handle(Event event) {
+                if (event instanceof InputEvent && ((InputEvent) event).getType().equals(InputEvent.Type.touchDown))
+                    for (String func : funcs.keySet())
+                        cacheValue(func);
+                return false;
+            }
+        });
         stage.addActor(buttonRefresh);
         resizeToDo.add(new Runnable() {
             @Override
@@ -210,10 +233,7 @@ public class Polyfiter extends ApplicationAdapter {
                     if (((InputEvent) event).getType().equals(InputEvent.Type.touchUp)) {
                         if (padLastTouchTime > 0) {
                             long delta = TimeUtils.millis() - padLastTouchTime;
-                            Gdx.app.debug("Delta time", "" + delta);
-                            if (delta < 0) {
-                                Gdx.app.error("Delta time", "can't be null! The time has gone back?!");
-                            } else if (delta < 233) {
+                            if (0 < delta && delta < 233) {
                                 MoveCameraToAction action = new MoveCameraToAction((innerStage.getViewport().getCamera()), 0.666666F);
                                 action.setPosition(0, 0, 0);
                                 touchpad.addAction(action);
@@ -225,7 +245,29 @@ public class Polyfiter extends ApplicationAdapter {
                 return true;
             }
         });
-        funcs.put("x+1000/x", cacheValue("x+1000/x"));
+        dialogCaching = GDXDialogsSystem.getDialogManager().newDialog(GDXProgressDialog.class);
+        dialogCaching.setTitle("Generating cache");
+        dialogCaching.setMessage("Please wait for a while,\nmaybe you can look up to the sky...");
+        dialogCaching.build();
+        dialogAdd = GDXDialogsSystem.getDialogManager().newDialog(GDXTextPrompt.class);
+        dialogAdd.setTitle("Add point(s) or a function");
+        dialogAdd.setConfirmButtonLabel("OK");
+        dialogAdd.setCancelButtonLabel("Cancel");
+        dialogAdd.setTextPromptListener(new TextPromptListener() {
+            @Override
+            public void cancel() {
+            }
+
+            @Override
+            public void confirm(String text) {
+                funcs.put(text, cacheValue(text));
+            }
+        });
+        dialogAdd.build();
+        funcs.put("1000/x", cacheValue("1000/x"));
+
+        Gdx.graphics.setContinuousRendering(false);
+
     }
 
     @Override
@@ -238,7 +280,7 @@ public class Polyfiter extends ApplicationAdapter {
 
     @Override
     public void render() {
-        Gdx.gl.glClearColor(0,0,0,0);
+        Gdx.gl.glClearColor(0, 0, 0, 0);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         Camera innerCamera = innerStage.getViewport().getCamera();
@@ -284,10 +326,12 @@ public class Polyfiter extends ApplicationAdapter {
         for (Polyfit.Point2 point : points) {
             shapeRenderer.circle((float) point.x.doubleValue(), (float) point.y.doubleValue(), 2.33F);
         }
-        shapeRenderer.setColor(lineColor);
-        for (Map.Entry<String, Set<Polyfit.Point2>> entry : funcs.entrySet()) {
-            for (Polyfit.Point2 point : entry.getValue()) {
-                shapeRenderer.circle((float) point.x.doubleValue(), (float) point.y.doubleValue(), 1);
+        if (drawFuncWhenTouched || !touchpad.isTouched()) {
+            shapeRenderer.setColor(lineColor);
+            for (Map.Entry<String, Set<Polyfit.Point2>> entry : funcs.entrySet()) {
+                for (Polyfit.Point2 point : entry.getValue()) {
+                    shapeRenderer.circle((float) point.x.doubleValue(), (float) point.y.doubleValue(), 1);
+                }
             }
         }
         shapeRenderer.end();
@@ -305,26 +349,29 @@ public class Polyfiter extends ApplicationAdapter {
     }
 
     public Set<Polyfit.Point2> cacheValue(String func) {
+        dialogCaching.show();
         int n = Math.min(Gdx.graphics.getWidth(), nCachedPointMax);
         if (n > 0) {
             Set<Polyfit.Point2> values = new LinkedHashSet<Polyfit.Point2>(n);
             double deltaX = Gdx.graphics.getWidth() / n;
+            Vector3 position = innerStage.getViewport().getCamera().position;
             for (int i = 0; i <= n; i++) {
-                Vector3 position = innerStage.getViewport().getCamera().position;
                 float x = (float) (position.x - Gdx.graphics.getWidth() / 2 + deltaX * i * 2);
                 String expression = func.replace("x", "" + x);
                 try {
-                    float y = MathExpressionParser.parseLine(new StringReader(expression)).eval().floatValue();
+                    float y = Polyfit.parseSpecialFuncs(expression).floatValue();
                     if (y > position.y - Gdx.graphics.getHeight() / 2 && y < position.y + Gdx.graphics.getHeight() / 2) {
                         values.add(new Polyfit.Point2(new BigDecimal(x, OperationNode.mathContext), new BigDecimal(y, OperationNode.mathContext)));
                     }
-                } catch (RuntimeException re) {
+                } catch (Throwable re) {
                     Gdx.app.debug("CacheValue", "Failed to cache " + func + ", x=" + x + "\n", re);
                 }
             }
+            dialogCaching.dismiss();
             return values;
         }
         Gdx.app.error("Caching points", "Invalid amount " + n);
+        dialogCaching.dismiss();
         return null;
     }
 }
