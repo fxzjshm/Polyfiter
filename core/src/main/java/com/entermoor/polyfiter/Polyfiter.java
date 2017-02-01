@@ -5,7 +5,6 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -48,8 +47,6 @@ import de.tomgrill.gdxdialogs.core.dialogs.GDXTextPrompt;
 import de.tomgrill.gdxdialogs.core.listener.TextPromptListener;
 
 public class Polyfiter extends ApplicationAdapter {
-
-    public static final Object lock = new Object();
 
     public Set<Polyfit.Point2> points = new LinkedHashSet<Polyfit.Point2>();
     public Map<String, Set<Polyfit.Point2>> funcs = new LinkedHashMap<String, Set<Polyfit.Point2>>();
@@ -143,11 +140,7 @@ public class Polyfiter extends ApplicationAdapter {
         resizeToDo.add(new Runnable() {
             @Override
             public void run() {
-                synchronized (lock) {
-                    for (Map.Entry<String, Set<Polyfit.Point2>> entry : funcs.entrySet()) {
-                        entry.setValue(cacheValue(entry.getKey()));
-                    }
-                }
+                recache();
             }
         });
 
@@ -201,8 +194,7 @@ public class Polyfiter extends ApplicationAdapter {
             @Override
             public boolean handle(Event event) {
                 if (event instanceof InputEvent && ((InputEvent) event).getType().equals(InputEvent.Type.touchDown))
-                    for (String func : funcs.keySet())
-                        cacheValue(func);
+                    recache();
                 return false;
             }
         });
@@ -245,10 +237,6 @@ public class Polyfiter extends ApplicationAdapter {
                 return true;
             }
         });
-        dialogCaching = GDXDialogsSystem.getDialogManager().newDialog(GDXProgressDialog.class);
-        dialogCaching.setTitle("Generating cache");
-        dialogCaching.setMessage("Please wait for a while,\nmaybe you can look up to the sky...");
-        dialogCaching.build();
         dialogAdd = GDXDialogsSystem.getDialogManager().newDialog(GDXTextPrompt.class);
         dialogAdd.setTitle("Add point(s) or a function");
         dialogAdd.setConfirmButtonLabel("OK");
@@ -326,6 +314,8 @@ public class Polyfiter extends ApplicationAdapter {
         for (Polyfit.Point2 point : points) {
             shapeRenderer.circle((float) point.x.doubleValue(), (float) point.y.doubleValue(), 2.33F);
         }
+        if (touchpad.isTouched())
+            Gdx.graphics.requestRendering();
         if (drawFuncWhenTouched || !touchpad.isTouched()) {
             shapeRenderer.setColor(lineColor);
             for (Map.Entry<String, Set<Polyfit.Point2>> entry : funcs.entrySet()) {
@@ -349,18 +339,27 @@ public class Polyfiter extends ApplicationAdapter {
     }
 
     public Set<Polyfit.Point2> cacheValue(String func) {
+        dialogCaching = GDXDialogsSystem.getDialogManager().newDialog(GDXProgressDialog.class);
+        dialogCaching.setTitle("Generating cache");
+        dialogCaching.setMessage("Please wait for a while,\nmaybe you can look up to the sky...");
+        dialogCaching.build();
         dialogCaching.show();
         int n = Math.min(Gdx.graphics.getWidth(), nCachedPointMax);
         if (n > 0) {
             Set<Polyfit.Point2> values = new LinkedHashSet<Polyfit.Point2>(n);
             double deltaX = Gdx.graphics.getWidth() / n;
             Vector3 position = innerStage.getViewport().getCamera().position;
+            float left = position.x - Gdx.graphics.getWidth() / 2;
+            float right = position.x + Gdx.graphics.getWidth() / 2;
+            float down = position.y - Gdx.graphics.getHeight() / 2;
+            float up = position.y + Gdx.graphics.getHeight() / 2;
+            Gdx.app.debug("CacheValue", "left=" + left + ", right=" + right + ", down=" + down + ", up=" + up);
             for (int i = 0; i <= n; i++) {
-                float x = (float) (position.x - Gdx.graphics.getWidth() / 2 + deltaX * i * 2);
+                float x = (float) (left + deltaX * i);
                 String expression = func.replace("x", "" + x);
                 try {
                     float y = Polyfit.parseSpecialFuncs(expression).floatValue();
-                    if (y > position.y - Gdx.graphics.getHeight() / 2 && y < position.y + Gdx.graphics.getHeight() / 2) {
+                    if (y > down && y < up) {
                         values.add(new Polyfit.Point2(new BigDecimal(x, OperationNode.mathContext), new BigDecimal(y, OperationNode.mathContext)));
                     }
                 } catch (Throwable re) {
@@ -372,6 +371,13 @@ public class Polyfiter extends ApplicationAdapter {
         }
         Gdx.app.error("Caching points", "Invalid amount " + n);
         dialogCaching.dismiss();
-        return null;
+        return new LinkedHashSet<Polyfit.Point2>(0);
+    }
+
+    public void recache(){
+        for (String func : funcs.keySet()) {
+            funcs.remove(func).clear(); // Avoid memory leak ???
+            funcs.put(func, cacheValue(func));
+        }
     }
 }
