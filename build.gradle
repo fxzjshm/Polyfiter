@@ -44,7 +44,7 @@ allprojects {
 
     repositories {
         mavenLocal()
-        // maven{ url 'http://192.168.1.152:8081/repository/oss-sonatype-snapshots/'} // Local cache.
+        maven{ url 'http://192.168.1.152:8081/repository/oss-sonatype-snapshots/'} // Local cache.
         // maven{ url 'http://maven.aliyun.com/nexus/content/repositories/central/'}
         // maven{ url 'http://maven.aliyun.com/nexus/content/repositories/gradle-plugin/'}
         // maven{ url 'http://maven.aliyun.com/nexus/content/repositories/hongkong-nexus/'}

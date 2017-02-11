@@ -4,6 +4,7 @@ import com.badlogic.gdx.backends.iosmoe.IOSApplication;
 import com.badlogic.gdx.backends.iosmoe.IOSApplicationConfiguration;
 import org.moe.natj.general.Pointer;
 import com.entermoor.polyfiter.Polyfiter;
+import com.entermoor.polyfiter.utils.PooledRunnablePoster;
 
 // import apple.foundation.NSAutoreleasePool;
 import apple.uikit.c.UIKit;
@@ -18,7 +19,7 @@ public class IOSMoeLauncher extends IOSApplication.Delegate {
     protected IOSApplication createApplication() {
         IOSApplicationConfiguration config = new IOSApplicationConfiguration();
         config.useAccelerometer = false;
-        return new IOSApplication(new Polyfiter(), config);
+        return new IOSApplication(new Polyfiter(new PooledRunnablePoster()), config);
     }
 
     public static void main(String[] argv) {

@@ -28,6 +28,8 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.entermoor.polyfiter.action.MoveCameraToAction;
+import com.entermoor.polyfiter.utils.GwtRunnablePoster;
+import com.entermoor.polyfiter.utils.IRunnablePoster;
 import com.entermoor.polyfiter.utils.Polyfit;
 import com.kotcrab.vis.ui.VisUI;
 
@@ -36,10 +38,12 @@ import net.hakugyokurou.fds.node.OperationNode;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 import de.tomgrill.gdxdialogs.core.GDXDialogsSystem;
 import de.tomgrill.gdxdialogs.core.dialogs.GDXProgressDialog;
@@ -48,9 +52,12 @@ import de.tomgrill.gdxdialogs.core.listener.TextPromptListener;
 
 public class Polyfiter extends ApplicationAdapter {
 
-    public Set<Polyfit.Point2> points = new LinkedHashSet<Polyfit.Point2>();
+    public Set<Polyfit.Point2> points = Collections.synchronizedSet(new LinkedHashSet<Polyfit.Point2>());
     public Map<String, Set<Polyfit.Point2>> funcs = new LinkedHashMap<String, Set<Polyfit.Point2>>();
     public Set<Runnable> resizeToDo = new LinkedHashSet<Runnable>();
+    public Stack<OrdinaryEntry<Double, String>> toCacheList = new Stack<OrdinaryEntry<Double, String>>();
+
+    public IRunnablePoster runnablePoster;
 
     public SpriteBatch batch;
     public InputMultiplexer inputProcessor;
@@ -72,6 +79,14 @@ public class Polyfiter extends ApplicationAdapter {
     public long padLastTouchTime = -1;
     public int nCachedPointMax = 10000;
     public boolean drawFuncWhenTouched = false;
+
+    public Polyfiter() {
+        this(new GwtRunnablePoster());
+    }
+
+    public Polyfiter(IRunnablePoster poster) {
+        runnablePoster = poster;
+    }
 
     public static float dScaleDelta(float scaleDelta) {
         return (float) 23.3 / scaleDelta;
@@ -338,7 +353,7 @@ public class Polyfiter extends ApplicationAdapter {
         VisUI.dispose();
     }
 
-    public Set<Polyfit.Point2> cacheValue(String func) {
+    public Set<Polyfit.Point2> cacheValue(final String func) {
         dialogCaching = GDXDialogsSystem.getDialogManager().newDialog(GDXProgressDialog.class);
         dialogCaching.setTitle("Generating cache");
         dialogCaching.setMessage("Please wait for a while,\nmaybe you can look up to the sky...");
@@ -346,25 +361,58 @@ public class Polyfiter extends ApplicationAdapter {
         dialogCaching.show();
         int n = Math.min(Gdx.graphics.getWidth(), nCachedPointMax);
         if (n > 0) {
-            Set<Polyfit.Point2> values = new LinkedHashSet<Polyfit.Point2>(n);
+            final Set<Polyfit.Point2> values = new LinkedHashSet<Polyfit.Point2>(n);
             double deltaX = Gdx.graphics.getWidth() / n;
             Vector3 position = innerStage.getViewport().getCamera().position;
-            float left = position.x - Gdx.graphics.getWidth() / 2;
-            float right = position.x + Gdx.graphics.getWidth() / 2;
-            float down = position.y - Gdx.graphics.getHeight() / 2;
-            float up = position.y + Gdx.graphics.getHeight() / 2;
+            final double left = position.x - Gdx.graphics.getWidth() / 2;
+            final double right = position.x + Gdx.graphics.getWidth() / 2;
+            final double down = position.y - Gdx.graphics.getHeight() / 2;
+            final double up = position.y + Gdx.graphics.getHeight() / 2;
             Gdx.app.debug("CacheValue", "left=" + left + ", right=" + right + ", down=" + down + ", up=" + up);
-            for (int i = 0; i <= n; i++) {
-                float x = (float) (left + deltaX * i);
+            final Object lock = new Object();
+            for (int i = -n / 2; i <= n / 2; i++) {
+                double x = position.x + deltaX * i;
                 String expression = func.replace("x", "" + x);
-                try {
-                    float y = Polyfit.parseSpecialFuncs(expression).floatValue();
+                toCacheList.add(new OrdinaryEntry<Double, String>(x, expression));
+                Runnable cacheRunnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            while (true) {
+                                OrdinaryEntry<Double, String> entry;
+                                synchronized (lock) {
+                                    if (!toCacheList.isEmpty()) {
+                                        entry = toCacheList.pop();
+                                    } else return;
+                                }
+                                String expression = entry.value;
+                                double x = entry.key;
+                                try {
+                                    double y = Polyfit.parseSpecialFuncs(expression).floatValue();
+                                    if (y > down && y < up) {
+                                        values.add(new Polyfit.Point2(new BigDecimal(x, OperationNode.mathContext), new BigDecimal(y, OperationNode.mathContext)));
+                                    }
+                                } catch (Throwable re) {
+                                    Gdx.app.debug("CacheValue", "Failed to cache " + func + ", x=" + x + "\n", re);
+                                }
+
+                            }
+                        } catch (Throwable t) {
+                            Gdx.app.debug("CacheValue", "Failed", t);
+                        }
+                    }
+                };
+                Gdx.app.debug("AvailableProcessors", "" + Runtime.getRuntime().availableProcessors());
+                for (int j = 0; j < Runtime.getRuntime().availableProcessors(); j++)
+                    runnablePoster.post(cacheRunnable);
+                /*try {
+                    double y = Polyfit.parseSpecialFuncs(expression).floatValue();
                     if (y > down && y < up) {
                         values.add(new Polyfit.Point2(new BigDecimal(x, OperationNode.mathContext), new BigDecimal(y, OperationNode.mathContext)));
                     }
                 } catch (Throwable re) {
                     Gdx.app.debug("CacheValue", "Failed to cache " + func + ", x=" + x + "\n", re);
-                }
+                }*/
             }
             dialogCaching.dismiss();
             return values;
@@ -374,10 +422,39 @@ public class Polyfiter extends ApplicationAdapter {
         return new LinkedHashSet<Polyfit.Point2>(0);
     }
 
-    public void recache(){
+    public void recache() {
         for (String func : funcs.keySet()) {
             funcs.remove(func).clear(); // Avoid memory leak ???
             funcs.put(func, cacheValue(func));
         }
+    }
+
+    public static class OrdinaryEntry<K, V> implements Map.Entry<K, V> {
+        public K key;
+        public V value;
+
+        public OrdinaryEntry(K k, V v) {
+            key = k;
+            value = v;
+        }
+
+        @Override
+        public K getKey() {
+            return key;
+        }
+
+        @Override
+        public V getValue() {
+            return value;
+        }
+
+        @Override
+        public V setValue(V value) {
+            return this.value = value;
+        }
+    }
+
+    public static abstract class CacheRunnable implements Runnable {
+
     }
 }
