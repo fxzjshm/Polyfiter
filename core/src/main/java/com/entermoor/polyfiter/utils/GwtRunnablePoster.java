@@ -5,4 +5,9 @@ public class GwtRunnablePoster implements IRunnablePoster {
     public void post(Runnable runnable) {
         runnable.run();
     }
+
+    @Override
+    public int properRunnableNumber() {
+        return 1;
+    }
 }
