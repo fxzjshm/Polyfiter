@@ -2,6 +2,7 @@ apply plugin: "java"
 // apply plugin: "proguard"
 
 sourceCompatibility = 1.6
+targetCompatibility = 1.6
 sourceSets.main.java.srcDirs = [ "src/main/java" ]
 
 project.ext.assetsDir = new File("../android/assets");

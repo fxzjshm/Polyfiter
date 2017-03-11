@@ -1,0 +1,1 @@
+cd libs/ && java -jar desktop.jar && cd ..

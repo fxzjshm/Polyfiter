@@ -7,7 +7,6 @@ import net.hakugyokurou.fds.parser.MathExpressionParser;
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -71,7 +70,8 @@ public abstract class Polyfit {
     public static BigDecimal parseSpecialFuncs(String expression) throws IOException {
         try {
             return MathExpressionParser.parseLine(new StringReader(expression)).eval();
-        } catch (InvalidExpressionException ignored) {}
+        } catch (InvalidExpressionException ignored) {
+        }
         for (String funcPrefix : funcPrefixes) {
             try {
                 String innerExpression = getExpressionInFunc(expression, funcPrefix);
@@ -193,6 +193,18 @@ public abstract class Polyfit {
         public Point2(long x, long y) {
             this.x = new BigDecimal(x, OperationNode.mathContext);
             this.y = new BigDecimal(y, OperationNode.mathContext);
+        }
+
+        public Point2(String s) {
+            try {
+                String[] ss = new String[0];
+                if (s.contains(",")) ss = s.split(",");
+                if (s.contains("，")) ss = s.split("，");
+                x = new BigDecimal(ss[0], OperationNode.mathContext);
+                y = new BigDecimal(ss[1], OperationNode.mathContext);
+            } catch (Throwable t) {
+                throw new IllegalArgumentException("Error: unable to read a point using:" + s, t);
+            }
         }
     }
 }

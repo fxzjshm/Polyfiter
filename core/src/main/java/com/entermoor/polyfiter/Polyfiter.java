@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.Stack;
 
 import de.tomgrill.gdxdialogs.core.GDXDialogsSystem;
+import de.tomgrill.gdxdialogs.core.dialogs.GDXButtonDialog;
 import de.tomgrill.gdxdialogs.core.dialogs.GDXProgressDialog;
 import de.tomgrill.gdxdialogs.core.dialogs.GDXTextPrompt;
 import de.tomgrill.gdxdialogs.core.listener.TextPromptListener;
@@ -121,12 +122,13 @@ public class Polyfiter extends ApplicationAdapter {
 
     @Override
     public void create() {
-        // TODO Delete this wehen releasing
+        // TODO Delete this when releasing
         Gdx.app.setLogLevel(Application.LOG_DEBUG);
         Gdx.graphics.setWindowedMode((int) (Gdx.graphics.getDisplayMode().width * 0.9), (int) (Gdx.graphics.getDisplayMode().height * 0.8));
 
         batch = new SpriteBatch();
         stage = new Stage(new ScreenViewport(), batch);
+        // TODO Delete this when releasing
         stage.setDebugAll(true);
         resizeToDo.add(new Runnable() {
             @Override
@@ -136,6 +138,7 @@ public class Polyfiter extends ApplicationAdapter {
                 for (Array<Actor> actors = stage.getActors(); actors.size > 0; )
                     newStage.addActor(actors.pop());
                 stage.dispose();
+                // TODO Delete this when releasing
                 newStage.setDebugAll(true);
                 stage = newStage;
                 inputProcessor.addProcessor(stage);
@@ -255,21 +258,36 @@ public class Polyfiter extends ApplicationAdapter {
             }
         });
         dialogAdd = GDXDialogsSystem.getDialogManager().newDialog(GDXTextPrompt.class);
-        dialogAdd.setTitle("Add point(s) or a function");
+        dialogAdd.setTitle("Add a point (x,y) or a function");
         dialogAdd.setConfirmButtonLabel("OK");
         dialogAdd.setCancelButtonLabel("Cancel");
         dialogAdd.setTextPromptListener(new TextPromptListener() {
+            String lastFunc;
+
             @Override
             public void cancel() {
             }
 
             @Override
             public void confirm(String text) {
-                funcs.put(text, cacheValue(text));
+                if (text.contains(",")||text.contains("，")) {
+                    try {
+                        points.add(new Polyfit.Point2(text));
+                        if (lastFunc != null) funcs.remove(lastFunc);
+                        lastFunc = Polyfit.polyfit1(points);
+                        funcs.put(lastFunc, cacheValue(lastFunc));
+                    } catch (IllegalArgumentException iae) {
+                        dialogAdd.dismiss();
+                        GDXDialogsSystem.getDialogManager().newDialog(GDXButtonDialog.class).setTitle("Error").setMessage("Unable to understand: " + text).addButton("OK").build().show();
+                    } catch (ArithmeticException ignored) {
+                    }
+                } else {
+                    funcs.put(text, cacheValue(text));
+                }
             }
         });
         dialogAdd.build();
-        funcs.put("1000/x", cacheValue("1000/x"));
+        // funcs.put("1000/x", cacheValue("1000/x"));
 
         Gdx.graphics.setContinuousRendering(false);
 
@@ -297,15 +315,19 @@ public class Polyfiter extends ApplicationAdapter {
         } else if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             scaleDelta += dScaleDelta(scaleDelta);
             innerCamera.translate((float) (-0.1 * scaleDelta), 0, 0);
+            Gdx.graphics.requestRendering();
         } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
             scaleDelta += dScaleDelta(scaleDelta);
             innerCamera.translate((float) (0.1 * scaleDelta), 0, 0);
+            Gdx.graphics.requestRendering();
         } else if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
             scaleDelta += dScaleDelta(scaleDelta);
             innerCamera.translate(0, (float) (0.1 * scaleDelta), 0);
+            Gdx.graphics.requestRendering();
         } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
             scaleDelta += dScaleDelta(scaleDelta);
             innerCamera.translate(0, (float) (-0.1 * scaleDelta), 0);
+            Gdx.graphics.requestRendering();
         } else {
             scaleDelta = 1;
         }
@@ -417,7 +439,9 @@ public class Polyfiter extends ApplicationAdapter {
     }
 
     public void recache() {
-        for (String func : funcs.keySet()) {
+        String[] ss = new String[funcs.keySet().size()];
+        ss = funcs.keySet().toArray(ss);
+        for (String func : ss) {
             funcs.remove(func).clear(); // Avoid memory leak ???
             funcs.put(func, cacheValue(func));
         }
