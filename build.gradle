@@ -40,6 +40,7 @@ allprojects {
         gdxDialogsVersion = '1.2.0'
         asmVersion = '3.3.1'
         lwjglVersion = '3.1.0'
+        svg2pixmapVersion = '0.0.1-SNAPSHOT'
     }
 
     repositories {
@@ -125,6 +126,7 @@ project(":html") {
         compile "de.tomgrill.gdxdialogs:gdx-dialogs-html:$gdxDialogsVersion"
         compile "de.tomgrill.gdxdialogs:gdx-dialogs-core:$gdxDialogsVersion:sources"
         compile "de.tomgrill.gdxdialogs:gdx-dialogs-html:$gdxDialogsVersion:sources"
+        compile "io.github.fxzjshm.gdx.svg2pixmap:gdx-svg2pixmap-core:$svg2pixmapVersion:sources"
 
     }
 }
@@ -136,6 +138,7 @@ project(":core") {
         compile "com.badlogicgames.gdx:gdx:$gdxVersion"
         compile "com.kotcrab.vis:vis-ui:$visuiVersion"
         compile "de.tomgrill.gdxdialogs:gdx-dialogs-core:$gdxDialogsVersion"
+		compile "io.github.fxzjshm.gdx.svg2pixmap:gdx-svg2pixmap-core:$svg2pixmapVersion"
 
         testCompile "junit:junit:4.12"
     }

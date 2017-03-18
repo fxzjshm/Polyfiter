@@ -5,6 +5,7 @@
 	<inherits name='com.kotcrab.vis.vis-ui' />
 	<inherits name='de.tomgrill.gdxdialogs.html.gdx_dialogs_html' />
 	<inherits name="de.tomgrill.gdxdialogs.core.gdx_dialogs_core" />
+	<inherits name="io.github.fxzjshm.gdx.svg2pixmap" />
 
 	<inherits name='Polyfiter' />
 	<entry-point class='com.entermoor.polyfiter.client.HtmlLauncher' />

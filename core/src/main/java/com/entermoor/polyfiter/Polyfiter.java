@@ -40,6 +40,7 @@ import net.hakugyokurou.fds.node.OperationNode;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.util.ConcurrentModificationException;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -51,6 +52,7 @@ import de.tomgrill.gdxdialogs.core.dialogs.GDXButtonDialog;
 import de.tomgrill.gdxdialogs.core.dialogs.GDXProgressDialog;
 import de.tomgrill.gdxdialogs.core.dialogs.GDXTextPrompt;
 import de.tomgrill.gdxdialogs.core.listener.TextPromptListener;
+import io.github.fxzjshm.gdx.svg2pixmap.Svg2Pixmap;
 
 public class Polyfiter extends ApplicationAdapter {
 
@@ -188,7 +190,8 @@ public class Polyfiter extends ApplicationAdapter {
             }
         });
 
-        Pixmap buttonAddUp = new Pixmap(Gdx.files.internal("plus.png"));
+        final int size = Math.min(Gdx.graphics.getWidth(), Gdx.graphics.getHeight()) / 10;
+        Pixmap buttonAddUp = Svg2Pixmap.path2Pixmap(32, 32, "M16 2 L16 30 M2 16 L30 16", null, Color.WHITE, 2, new Pixmap(size, size, Pixmap.Format.RGBA4444)); //new Pixmap(Gdx.files.internal("plus.png"));
         Pixmap buttonAddDown = filter(buttonAddUp, 0.233F, 0.233F, 0.666F, 1);
         buttonAdd = new Button(drawable(buttonAddUp), drawable(buttonAddDown));
         buttonAdd.addListener(new EventListener() {
@@ -203,11 +206,10 @@ public class Polyfiter extends ApplicationAdapter {
         resizeToDo.add(new Runnable() {
             @Override
             public void run() {
-                int size = Math.min(Gdx.graphics.getWidth(), Gdx.graphics.getHeight()) / 10;
                 buttonAdd.setBounds(Gdx.graphics.getWidth() - size, Gdx.graphics.getHeight() - size, size, size);
             }
         });
-        Pixmap buttonRefreshUp = new Pixmap(Gdx.files.internal("reload.png"));
+        Pixmap buttonRefreshUp = Svg2Pixmap.path2Pixmap(32, 32, "M29 16 C29 22 24 29 16 29 8 29 3 22 3 16 3 10 8 3 16 3 21 3 25 6 27 9 M20 10 L27 9 28 2", null, Color.WHITE, 2, new Pixmap(size, size, Pixmap.Format.RGBA4444));// new Pixmap(Gdx.files.internal("reload.png"));
         Pixmap buttonRefreshDown = filter(buttonRefreshUp, 0.233F, 0.233F, 0.666F, 1);
         buttonRefresh = new Button(drawable(buttonRefreshUp), drawable(buttonRefreshDown));
         buttonRefresh.addListener(new EventListener() {
@@ -222,7 +224,6 @@ public class Polyfiter extends ApplicationAdapter {
         resizeToDo.add(new Runnable() {
             @Override
             public void run() {
-                int size = Math.min(Gdx.graphics.getWidth(), Gdx.graphics.getHeight()) / 10;
                 buttonRefresh.setBounds(Gdx.graphics.getWidth() - size * 2, Gdx.graphics.getHeight() - size, size, size);
             }
         });
@@ -270,7 +271,7 @@ public class Polyfiter extends ApplicationAdapter {
 
             @Override
             public void confirm(String text) {
-                if (text.contains(",")||text.contains("，")) {
+                if (text.contains(",") || text.contains("，")) {
                     try {
                         points.add(new Polyfit.Point2(text));
                         if (lastFunc != null) funcs.remove(lastFunc);
@@ -329,6 +330,7 @@ public class Polyfiter extends ApplicationAdapter {
             innerCamera.translate(0, (float) (-0.1 * scaleDelta), 0);
             Gdx.graphics.requestRendering();
         } else {
+            if (scaleDelta != 1) recache();
             scaleDelta = 1;
         }
 
@@ -357,10 +359,13 @@ public class Polyfiter extends ApplicationAdapter {
             Gdx.graphics.requestRendering();
         if (drawFuncWhenTouched || !touchpad.isTouched()) {
             shapeRenderer.setColor(lineColor);
-            for (Map.Entry<String, Set<Polyfit.Point2>> entry : funcs.entrySet()) {
-                for (Polyfit.Point2 point : entry.getValue()) {
-                    shapeRenderer.circle((float) point.x.doubleValue(), (float) point.y.doubleValue(), 1);
+            try {
+                for (Map.Entry<String, Set<Polyfit.Point2>> entry : funcs.entrySet()) {
+                    for (Polyfit.Point2 point : entry.getValue()) {
+                        shapeRenderer.circle((float) point.x.doubleValue(), (float) point.y.doubleValue(), 1);
+                    }
                 }
+            } catch (ConcurrentModificationException ignored) {
             }
         }
         shapeRenderer.end();
@@ -388,8 +393,8 @@ public class Polyfiter extends ApplicationAdapter {
             final Set<Polyfit.Point2> values = new Synchronized.SynchronizedSet<Polyfit.Point2>(new LinkedHashSet<Polyfit.Point2>(n));
             double deltaX = Gdx.graphics.getWidth() / n;
             Vector3 position = innerStage.getViewport().getCamera().position;
-            final double left = position.x - Gdx.graphics.getWidth() / 2;
-            final double right = position.x + Gdx.graphics.getWidth() / 2;
+            // final double left = position.x - Gdx.graphics.getWidth() / 2;
+            // final double right = position.x + Gdx.graphics.getWidth() / 2;
             final double down = position.y - Gdx.graphics.getHeight() / 2;
             final double up = position.y + Gdx.graphics.getHeight() / 2;
             // Gdx.app.debug("CacheValue", "left=" + left + ", right=" + right + ", down=" + down + ", up=" + up);
@@ -428,7 +433,7 @@ public class Polyfiter extends ApplicationAdapter {
             };
             for (int j = 0; j < runnablePoster.properRunnableNumber(); j++)
                 runnablePoster.post(cacheRunnable);
-            while (!toCacheList.isEmpty()) ; // Wait until finished caching.
+            // while (!toCacheList.isEmpty()) ; // Wait until finished caching.
             dialogCaching.dismiss();
             return values;
         }
