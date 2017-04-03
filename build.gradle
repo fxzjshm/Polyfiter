@@ -61,7 +61,7 @@ project(":desktop") {
     apply plugin: "application"
 
     dependencies {
-        compile project(":core")
+        compile project(":native-java")
         compile "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
         compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
         compile "de.tomgrill.gdxdialogs:gdx-dialogs-desktop:$gdxDialogsVersion"
@@ -86,7 +86,7 @@ project(":android") {
     configurations { natives }
 
     dependencies {
-        compile project(":core")
+        compile project(":native-java")
         compile "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
         natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi"
         natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
@@ -103,7 +103,7 @@ project(":ios") {
 
 
     dependencies {
-        compile project(":core")
+        compile project(":native-java")
         compile "com.mobidevelop.robovm:robovm-rt:$roboVMVersion"
         compile "com.mobidevelop.robovm:robovm-cocoatouch:$roboVMVersion"
         compile "com.badlogicgames.gdx:gdx-backend-robovm:$gdxVersion"
@@ -150,7 +150,7 @@ project(":ios-moe") {
     configurations { natives }
 
     dependencies {
-        compile project(":core")
+        compile project(":native-java")
         compile "com.badlogicgames.gdx:gdx-backend-moe:$gdxVersion"
         natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-ios"
         compile "de.tomgrill.gdxdialogs:gdx-dialogs-ios-moe:$gdxDialogsVersion"
@@ -168,6 +168,14 @@ project(":jtransc") {
         compile "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
         compile "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
         jtransc "com.jtransc.gdx:gdx-backend-jtransc:$jtranscVersion"
+    }
+}
+
+project(":native-java") {
+    apply plugin: "java"
+
+    dependencies {
+        compile project(":core")
     }
 }
 

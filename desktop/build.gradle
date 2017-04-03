@@ -60,6 +60,7 @@ task releaseApplication(dependsOn:copyNewJar) {
 dist.dependsOn classes
 startScripts.dependsOn proguard
 // bundleNative.dependsOn copyNewJar
+build.dependsOn releaseApplication
 
 eclipse {
     project {

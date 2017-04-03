@@ -330,7 +330,10 @@ public class Polyfiter extends ApplicationAdapter {
             innerCamera.translate(0, (float) (-0.1 * scaleDelta), 0);
             Gdx.graphics.requestRendering();
         } else {
-            if (scaleDelta != 1) recache();
+            if (scaleDelta != 1) {
+                recache();
+                Gdx.graphics.requestRendering();
+            }
             scaleDelta = 1;
         }
 
