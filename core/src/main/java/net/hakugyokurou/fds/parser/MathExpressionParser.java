@@ -670,7 +670,7 @@ public class MathExpressionParser implements MathExpressionParserConstants {
         for (int i = 0; i < jj_expentries.size(); i++) {
             exptokseq[i] = jj_expentries.get(i);
         }
-        return new ParseException(token, exptokseq, tokenImage);
+        return new ParseException(token, exptokseq, new String[0]/*tokenImage*/); // Jtransc fails here.
     }
 
     /**
