@@ -22,6 +22,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
@@ -33,7 +34,6 @@ import com.entermoor.polyfiter.utils.IRunnablePoster;
 import com.entermoor.polyfiter.utils.OrdinaryEntry;
 import com.entermoor.polyfiter.utils.Polyfit;
 import com.entermoor.polyfiter.utils.Synchronized;
-import com.kotcrab.vis.ui.VisUI;
 
 import net.hakugyokurou.fds.node.OperationNode;
 
@@ -65,6 +65,7 @@ public class Polyfiter extends ApplicationAdapter {
 
     public SpriteBatch batch;
     public InputMultiplexer inputProcessor;
+    public Skin skin;
 
     public Stage stage;
     public Touchpad touchpad;
@@ -166,10 +167,13 @@ public class Polyfiter extends ApplicationAdapter {
             }
         });
 
+        skin=new Skin(Gdx.files.internal("visui/uiskin.json"));
         //Avoid exception on hot swap.
+        /*
         if (VisUI.isLoaded())
             VisUI.dispose();
-        VisUI.load();
+        VisUI.load(Gdx.files.internal("visui/uiskin.json"));
+        */
         try {
             GDXDialogsSystem.getDialogManager();
         } catch (Throwable e) {
@@ -179,7 +183,7 @@ public class Polyfiter extends ApplicationAdapter {
         img = new Image(new TextureRegionDrawable(new TextureRegion(new Texture("badlogic.jpg"))));
         innerStage.addActor(img);
 
-        touchpad = new Touchpad(0, VisUI.getSkin());
+        touchpad = new Touchpad(0, skin);
         touchpad.getColor().a *= 0.233;
         stage.addActor(touchpad);
         resizeToDo.add(new Runnable() {
@@ -382,7 +386,8 @@ public class Polyfiter extends ApplicationAdapter {
         innerStage.dispose();
         batch.dispose();
 //        img.dispose();
-        VisUI.dispose();
+        // VisUI.dispose();
+        skin.dispose();
     }
 
     public Set<Polyfit.Point2> cacheValue(final String func) {
