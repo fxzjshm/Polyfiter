@@ -122,7 +122,7 @@ project(":html") {
         compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"
         compile "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
         compile "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"
-        // compile "com.kotcrab.vis:vis-ui:$visuiVersion:sources"
+        compile "com.kotcrab.vis:vis-ui:$visuiVersion:sources"
         compile "de.tomgrill.gdxdialogs:gdx-dialogs-html:$gdxDialogsVersion"
         compile "de.tomgrill.gdxdialogs:gdx-dialogs-core:$gdxDialogsVersion:sources"
         compile "de.tomgrill.gdxdialogs:gdx-dialogs-html:$gdxDialogsVersion:sources"
@@ -136,7 +136,7 @@ project(":core") {
 
     dependencies {
         compile "com.badlogicgames.gdx:gdx:$gdxVersion"
-        // compile "com.kotcrab.vis:vis-ui:$visuiVersion"
+        compile "com.kotcrab.vis:vis-ui:$visuiVersion"
         compile "de.tomgrill.gdxdialogs:gdx-dialogs-core:$gdxDialogsVersion"
 		compile "io.github.fxzjshm.gdx.svg2pixmap:gdx-svg2pixmap-core:$svg2pixmapVersion"
 
