@@ -11,9 +11,9 @@ import com.entermoor.polyfiter.action.MoveCameraToAction;
 
 import static com.entermoor.polyfiter.Polyfiter.instance;
 
-public class StageMoverPlugin implements IPlugin {
+public class TouchpadStageMoverPlugin implements IPlugin {
 
-    public static StageMoverPlugin inst = new StageMoverPlugin();
+    public static TouchpadStageMoverPlugin inst = new TouchpadStageMoverPlugin();
 
     public Touchpad touchpad;
     public long padLastTouchTime = -1;
@@ -55,33 +55,30 @@ public class StageMoverPlugin implements IPlugin {
     @Override
     public void render() {
         if (touchpad.isTouched()) {
-            instance.resetScaleDelta = false;
+            KeyboardStageMoverPlugin.inst.resetScaleDelta = false;
             float deltaX = touchpad.getKnobPercentX();
             float deltaY = touchpad.getKnobPercentY();
-            instance.scaleDelta += Math.abs((deltaX + deltaY)) / 20;
-            instance.innerStage.getViewport().getCamera().translate(deltaX * instance.scaleDelta, deltaY * instance.scaleDelta, 0);
+            KeyboardStageMoverPlugin.inst.scaleDelta += Math.abs((deltaX + deltaY)) / 20;
+            instance.innerStage.getViewport().getCamera().translate(deltaX * KeyboardStageMoverPlugin.inst.scaleDelta, deltaY * KeyboardStageMoverPlugin.inst.scaleDelta, 0);
             Gdx.graphics.requestRendering();
         }
     }
 
     @Override
     public void pause() {
-
     }
 
     @Override
     public void resume() {
-
     }
 
     @Override
     public void dispose() {
-
     }
 
     @Override
     public String getName() {
-        return "StageMoverPlugin";
+        return "TouchpadStageMoverPlugin";
     }
 
     @Override

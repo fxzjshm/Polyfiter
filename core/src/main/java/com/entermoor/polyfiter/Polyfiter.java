@@ -3,7 +3,6 @@ package com.entermoor.polyfiter;
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
@@ -23,38 +22,30 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import com.entermoor.polyfiter.action.MoveCameraToAction;
+import com.entermoor.polyfiter.plugin.FunctionCacherPlugin;
 import com.entermoor.polyfiter.plugin.IPlugin;
-import com.entermoor.polyfiter.plugin.StageMoverPlugin;
+import com.entermoor.polyfiter.plugin.KeyboardStageMoverPlugin;
+import com.entermoor.polyfiter.plugin.TouchpadStageMoverPlugin;
 import com.entermoor.polyfiter.utils.GwtRunnablePoster;
 import com.entermoor.polyfiter.utils.IRunnablePoster;
-import com.entermoor.polyfiter.utils.OrdinaryEntry;
 import com.entermoor.polyfiter.utils.Polyfit;
 import com.entermoor.polyfiter.utils.Synchronized;
 
 import net.hakugyokurou.fds.node.OperationNode;
 
-import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Stack;
 
 import de.tomgrill.gdxdialogs.core.GDXDialogsSystem;
 import de.tomgrill.gdxdialogs.core.dialogs.GDXButtonDialog;
-import de.tomgrill.gdxdialogs.core.dialogs.GDXProgressDialog;
 import de.tomgrill.gdxdialogs.core.dialogs.GDXTextPrompt;
 import de.tomgrill.gdxdialogs.core.listener.TextPromptListener;
 import io.github.fxzjshm.gdx.svg2pixmap.Svg2Pixmap;
@@ -65,9 +56,7 @@ public class Polyfiter extends ApplicationAdapter {
     public static Polyfiter instance;
 
     public Set<Polyfit.Point2> points = new Synchronized.SynchronizedSet<Polyfit.Point2>(new LinkedHashSet<Polyfit.Point2>());
-    public Map<String, Set<Polyfit.Point2>> funcs = new Synchronized.SynchronizedMap<String, Set<Polyfit.Point2>>(new LinkedHashMap<String, Set<Polyfit.Point2>>());
     public Set<Runnable> resizeToDo = new LinkedHashSet<Runnable>();
-    public Stack<OrdinaryEntry<Double, String>> toCacheList = new Stack<OrdinaryEntry<Double, String>>();
     public Set<IPlugin> plugins = new HashSet<IPlugin>(4);
 
     public IRunnablePoster runnablePoster;
@@ -83,14 +72,9 @@ public class Polyfiter extends ApplicationAdapter {
     public ShapeRenderer shapeRenderer;
     public Button buttonAdd;
     public Button buttonRefresh;
-    public GDXProgressDialog dialogCaching;
     public GDXTextPrompt dialogAdd;
 
     public Color pointColor, xColor, yColor, lineColor;
-    public float scaleDelta = 1;
-    public boolean resetScaleDelta=true;
-
-    public int nCachedPointMax = 10000;
 
     public Polyfiter() {
         this(new GwtRunnablePoster());
@@ -99,10 +83,6 @@ public class Polyfiter extends ApplicationAdapter {
     public Polyfiter(IRunnablePoster poster) {
         runnablePoster = poster;
         instance=this;
-    }
-
-    public static float dScaleDelta(float scaleDelta) {
-        return (float) 23.3 / scaleDelta;
     }
 
     /**
@@ -137,7 +117,9 @@ public class Polyfiter extends ApplicationAdapter {
         Gdx.app.setLogLevel(Application.LOG_DEBUG);
         Gdx.graphics.setWindowedMode((int) (Gdx.graphics.getDisplayMode().width * 0.9), (int) (Gdx.graphics.getDisplayMode().height * 0.8));
 
-        plugins.add(StageMoverPlugin.inst);
+        plugins.add(TouchpadStageMoverPlugin.inst);
+        plugins.add(KeyboardStageMoverPlugin.inst);
+        plugins.add(FunctionCacherPlugin.inst);
 
         batch = new SpriteBatch();
         stage = new Stage(new ScreenViewport(), batch);
@@ -170,12 +152,6 @@ public class Polyfiter extends ApplicationAdapter {
         });
 
         OperationNode.mathContext = new MathContext(5, RoundingMode.HALF_UP);
-        resizeToDo.add(new Runnable() {
-            @Override
-            public void run() {
-                recache();
-            }
-        });
 
         skin = new Skin(Gdx.files.internal("visui/uiskin.json"));
         //Avoid exception on hot swap.
@@ -219,7 +195,7 @@ public class Polyfiter extends ApplicationAdapter {
             @Override
             public boolean handle(Event event) {
                 if (event instanceof InputEvent && ((InputEvent) event).getType().equals(InputEvent.Type.touchDown))
-                    recache();
+                    FunctionCacherPlugin.inst.recache();
                 return false;
             }
         });
@@ -258,16 +234,16 @@ public class Polyfiter extends ApplicationAdapter {
                 if (text.contains(",") || text.contains("，")) {
                     try {
                         points.add(new Polyfit.Point2(text));
-                        if (lastFunc != null) funcs.remove(lastFunc);
+                        if (lastFunc != null) FunctionCacherPlugin.inst.funcs.remove(lastFunc);
                         lastFunc = Polyfit.polyfit1(points);
-                        funcs.put(lastFunc, cacheValue(lastFunc));
+                        FunctionCacherPlugin.inst.funcs.put(lastFunc, FunctionCacherPlugin.inst.cacheValue(lastFunc));
                     } catch (IllegalArgumentException iae) {
                         dialogAdd.dismiss();
                         GDXDialogsSystem.getDialogManager().newDialog(GDXButtonDialog.class).setTitle("Error").setMessage("Unable to understand: " + text).addButton("OK").build().show();
                     } catch (ArithmeticException ignored) {
                     }
                 } else {
-                    funcs.put(text, cacheValue(text));
+                    FunctionCacherPlugin.inst.funcs.put(text, FunctionCacherPlugin.inst.cacheValue(text));
                 }
             }
         });
@@ -296,33 +272,6 @@ public class Polyfiter extends ApplicationAdapter {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         Camera innerCamera = innerStage.getViewport().getCamera();
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            scaleDelta += dScaleDelta(scaleDelta);
-            innerCamera.translate((float) (-0.1 * scaleDelta), 0, 0);
-            Gdx.graphics.requestRendering();
-        } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            scaleDelta += dScaleDelta(scaleDelta);
-            innerCamera.translate((float) (0.1 * scaleDelta), 0, 0);
-            Gdx.graphics.requestRendering();
-        } else if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
-            scaleDelta += dScaleDelta(scaleDelta);
-            innerCamera.translate(0, (float) (0.1 * scaleDelta), 0);
-            Gdx.graphics.requestRendering();
-        } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            scaleDelta += dScaleDelta(scaleDelta);
-            innerCamera.translate(0, (float) (-0.1 * scaleDelta), 0);
-            Gdx.graphics.requestRendering();
-        } else {
-            if (scaleDelta != 1) {
-                recache();
-                Gdx.graphics.requestRendering();
-            }
-            if(resetScaleDelta) {
-                scaleDelta = 1;
-            }else{
-                resetScaleDelta=true;
-            }
-        }
 
         stage.act();
         innerCamera.update();
@@ -345,10 +294,10 @@ public class Polyfiter extends ApplicationAdapter {
         for (Polyfit.Point2 point : points) {
             shapeRenderer.circle((float) point.x.doubleValue(), (float) point.y.doubleValue(), 2.33F);
         }
-        if (StageMoverPlugin.inst.drawFuncWhenTouched || !StageMoverPlugin.inst.touchpad.isTouched()) {
+        if (TouchpadStageMoverPlugin.inst.drawFuncWhenTouched || !TouchpadStageMoverPlugin.inst.touchpad.isTouched()) {
             shapeRenderer.setColor(lineColor);
             try {
-                for (Map.Entry<String, Set<Polyfit.Point2>> entry : funcs.entrySet()) {
+                for (Map.Entry<String, Set<Polyfit.Point2>> entry : FunctionCacherPlugin.inst.funcs.entrySet()) {
                     for (Polyfit.Point2 point : entry.getValue()) {
                         shapeRenderer.circle((float) point.x.doubleValue(), (float) point.y.doubleValue(), 1);
                     }
@@ -385,75 +334,5 @@ public class Polyfiter extends ApplicationAdapter {
     public void resume() {
         for(IPlugin plugin:plugins)
             plugin.resume();
-    }
-
-    public Set<Polyfit.Point2> cacheValue(final String func) {
-        dialogCaching = GDXDialogsSystem.getDialogManager().newDialog(GDXProgressDialog.class);
-        dialogCaching.setTitle("Generating cache");
-        dialogCaching.setMessage("Please wait for a while...");
-        dialogCaching.build();
-        dialogCaching.show();
-        int n = Math.min(Gdx.graphics.getWidth(), nCachedPointMax);
-        if (n > 0) {
-            final Set<Polyfit.Point2> values = new Synchronized.SynchronizedSet<Polyfit.Point2>(new LinkedHashSet<Polyfit.Point2>(n));
-            double deltaX = Gdx.graphics.getWidth() / n;
-            Vector3 position = innerStage.getViewport().getCamera().position;
-            // final double left = position.x - Gdx.graphics.getWidth() / 2;
-            // final double right = position.x + Gdx.graphics.getWidth() / 2;
-            final double down = position.y - Gdx.graphics.getHeight() / 2;
-            final double up = position.y + Gdx.graphics.getHeight() / 2;
-            // Gdx.app.debug("CacheValue", "left=" + left + ", right=" + right + ", down=" + down + ", up=" + up);
-            final Object lock = new Object();
-            for (int i = -n / 2; i <= n / 2; i++) {
-                double x = position.x + deltaX * i;
-                toCacheList.add(new OrdinaryEntry<Double, String>(x, func));
-            }
-            Runnable cacheRunnable = new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        while (true) {
-                            OrdinaryEntry<Double, String> entry;
-                            synchronized (lock) {
-                                if (!toCacheList.isEmpty()) {
-                                    entry = toCacheList.pop();
-                                } else return;
-                            }
-                            double x = entry.key;
-                            String expression = entry.value.replace("x", "" + x);
-                            try {
-                                double y = Polyfit.parseSpecialFuncs(expression).floatValue();
-                                if (y > down && y < up) {
-                                    values.add(new Polyfit.Point2(new BigDecimal(x, OperationNode.mathContext), new BigDecimal(y, OperationNode.mathContext)));
-                                }
-                            } catch (Throwable re) {
-                                Gdx.app.debug("CacheValue", "Failed to cache " + func + ", x=" + x + "\n", re);
-                            }
-
-                        }
-                    } catch (Throwable t) {
-                        Gdx.app.debug("CacheValue", "Failed", t);
-                    }
-                }
-            };
-            for (int j = 0; j < runnablePoster.properRunnableNumber(); j++)
-                runnablePoster.post(cacheRunnable);
-            // while (!toCacheList.isEmpty()) ; // Wait until finished caching.
-            dialogCaching.dismiss();
-            return values;
-        }
-        Gdx.app.error("Caching points", "Invalid amount " + n);
-        dialogCaching.dismiss();
-        System.gc(); // In order that heap will not be too large.
-        return new LinkedHashSet<Polyfit.Point2>(0);
-    }
-
-    public void recache() {
-        String[] ss = new String[funcs.keySet().size()];
-        ss = funcs.keySet().toArray(ss);
-        for (String func : ss) {
-            funcs.remove(func).clear(); // Avoid memory leak ???
-            funcs.put(func, cacheValue(func));
-        }
     }
 }
