@@ -1,0 +1,13 @@
+apply plugin: 'org.akhikhl.gretty'
+
+sourceCompatibility = 1.8
+
+gretty {
+    extraResourceBase 'webapp'
+}
+
+sourceSets.main.java.srcDirs = ["src"]
+
+eclipse.project {
+    name = appName + "-dragome"
+}

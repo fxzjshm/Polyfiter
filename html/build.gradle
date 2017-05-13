@@ -53,7 +53,7 @@ draftWar {
    from "war"
 }
 
-task addSource << {
+tasks.addSource.doLast {
 	sourceSets.main.compileClasspath += files(project(':core').sourceSets.main.allJava.srcDirs)
 }
 

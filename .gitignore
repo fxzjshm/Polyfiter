@@ -72,3 +72,8 @@ Thumbs.db
 
 ## Proguard
 mapping.txt
+
+## Dragome
+compiled-js/
+dragome/webapp/assets
+*.cache

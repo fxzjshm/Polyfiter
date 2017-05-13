@@ -1,1 +1,1 @@
-include 'desktop', 'android', 'ios', 'html', 'core', 'ios-moe', 'jtransc', 'native-java'
+include 'desktop', 'android', 'ios', 'html', 'core', 'ios-moe', 'jtransc', 'native-java', 'dragome'

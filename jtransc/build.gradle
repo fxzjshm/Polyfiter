@@ -30,3 +30,7 @@ jtransc {
      customTargetMinimized("html5", "haxe:html5", "js")
      customTargetMinimized("plainHtml5", "js", "js")
 }
+
+eclipse.project {
+    name = appName + "-jtransc"
+}

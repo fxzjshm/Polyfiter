@@ -20,6 +20,7 @@ buildscript {
         classpath "com.jtransc:jtransc-gradle-plugin:0.5.15"
         classpath 'net.sf.proguard:proguard-gradle:5.2.1'
         classpath 'ca.coglinc:javacc-gradle-plugin:2.3.1'
+		classpath 'org.akhikhl.gretty:gretty:+'
     }
 }
 
@@ -41,6 +42,7 @@ allprojects {
         asmVersion = '3.3.1'
         lwjglVersion = '3.1.0'
         svg2pixmapVersion = '0.0.1-SNAPSHOT'
+		dragomeVersion = '1.0.0-ALL-SNAPSHOT'
     }
 
     repositories {
@@ -176,6 +178,15 @@ project(":native-java") {
 
     dependencies {
         compile project(":core")
+    }
+}
+
+project(":dragome") {
+    apply plugin: "java"
+
+    dependencies {
+        compile project(":core")
+        compile "com.github.xpenatan:gdx-backend-dragome:$dragomeVersion"
     }
 }
 

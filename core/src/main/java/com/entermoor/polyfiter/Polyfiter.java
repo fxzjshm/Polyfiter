@@ -115,7 +115,8 @@ public class Polyfiter extends ApplicationAdapter {
     public void create() {
         // TODO Delete this when releasing
         Gdx.app.setLogLevel(Application.LOG_DEBUG);
-        Gdx.graphics.setWindowedMode((int) (Gdx.graphics.getDisplayMode().width * 0.9), (int) (Gdx.graphics.getDisplayMode().height * 0.8));
+		if(Gdx.graphics.getDisplayMode() != null) // Dragome need this.
+            Gdx.graphics.setWindowedMode((int) (Gdx.graphics.getDisplayMode().width * 0.9), (int) (Gdx.graphics.getDisplayMode().height * 0.8));
 
         plugins.add(TouchpadStageMoverPlugin.inst);
         plugins.add(KeyboardStageMoverPlugin.inst);
@@ -160,14 +161,11 @@ public class Polyfiter extends ApplicationAdapter {
             VisUI.dispose();
         VisUI.load(Gdx.files.internal("visui/uiskin.json"));
         */
-        try {
-            GDXDialogsSystem.getDialogManager();
-        } catch (Throwable e) {
-            GDXDialogsSystem.install();
-        }
+        GDXDialogsSystem.install();
+        
 
-        img = new Image(new TextureRegionDrawable(new TextureRegion(new Texture("badlogic.jpg"))));
-        innerStage.addActor(img);
+        // img = new Image(new TextureRegionDrawable(new TextureRegion(new Texture("badlogic.jpg"))));
+        // innerStage.addActor(img);
 
         final int size = Math.min(Gdx.graphics.getWidth(), Gdx.graphics.getHeight()) / 10;
         Pixmap buttonAddUp = Svg2Pixmap.path2Pixmap(32, 32, "M16 2 L16 30 M2 16 L30 16", null, Color.WHITE, 2, new Pixmap(size, size, Pixmap.Format.RGBA4444)); //new Pixmap(Gdx.files.internal("plus.png"));
