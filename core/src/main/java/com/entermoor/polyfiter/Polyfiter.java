@@ -82,7 +82,7 @@ public class Polyfiter extends ApplicationAdapter {
 
     public Polyfiter(IRunnablePoster poster) {
         runnablePoster = poster;
-        instance=this;
+        instance = this;
     }
 
     /**
@@ -115,8 +115,7 @@ public class Polyfiter extends ApplicationAdapter {
     public void create() {
         // TODO Delete this when releasing
         Gdx.app.setLogLevel(Application.LOG_DEBUG);
-		if(Gdx.graphics.getDisplayMode() != null) // Dragome need this.
-            Gdx.graphics.setWindowedMode((int) (Gdx.graphics.getDisplayMode().width * 0.9), (int) (Gdx.graphics.getDisplayMode().height * 0.8));
+        Gdx.graphics.setWindowedMode((int) (Gdx.graphics.getDisplayMode().width * 0.9), (int) (Gdx.graphics.getDisplayMode().height * 0.8));
 
         plugins.add(TouchpadStageMoverPlugin.inst);
         plugins.add(KeyboardStageMoverPlugin.inst);
@@ -162,7 +161,6 @@ public class Polyfiter extends ApplicationAdapter {
         VisUI.load(Gdx.files.internal("visui/uiskin.json"));
         */
         GDXDialogsSystem.install();
-        
 
         // img = new Image(new TextureRegionDrawable(new TextureRegion(new Texture("badlogic.jpg"))));
         // innerStage.addActor(img);
@@ -250,7 +248,7 @@ public class Polyfiter extends ApplicationAdapter {
 
         Gdx.graphics.setContinuousRendering(false);
 
-        for(IPlugin plugin:plugins)
+        for (IPlugin plugin : plugins)
             plugin.create();
     }
 
@@ -260,8 +258,8 @@ public class Polyfiter extends ApplicationAdapter {
         for (Runnable runnable : resizeToDo) {
             runnable.run();
         }
-        for(IPlugin plugin:plugins)
-            plugin.resize(width,height);
+        for (IPlugin plugin : plugins)
+            plugin.resize(width, height);
     }
 
     @Override
@@ -304,14 +302,14 @@ public class Polyfiter extends ApplicationAdapter {
             }
         }
         shapeRenderer.end();
-        for(IPlugin plugin:plugins)
+        for (IPlugin plugin : plugins)
             plugin.render();
         stage.draw();
     }
 
     @Override
     public void dispose() {
-        for(IPlugin plugin:plugins)
+        for (IPlugin plugin : plugins)
             plugin.dispose();
         shapeRenderer.dispose();
         stage.dispose();
@@ -324,13 +322,13 @@ public class Polyfiter extends ApplicationAdapter {
 
     @Override
     public void pause() {
-        for(IPlugin plugin:plugins)
+        for (IPlugin plugin : plugins)
             plugin.pause();
     }
 
     @Override
     public void resume() {
-        for(IPlugin plugin:plugins)
+        for (IPlugin plugin : plugins)
             plugin.resume();
     }
 }
