@@ -19,7 +19,7 @@ jtransc {
      relooper = true
      minimizeNames = false
      analyzer = false
-
+/*
      customTarget("cpp", "haxe:cpp", "exe")
      customTarget("windows", "haxe:windows", "exe")
      customTarget("linux", "haxe:linux", "bin")
@@ -29,6 +29,7 @@ jtransc {
      customTarget("tizen", "haxe:tizen", "app")
      customTargetMinimized("html5", "haxe:html5", "js")
      customTargetMinimized("plainHtml5", "js", "js")
+*/
 }
 
 eclipse.project {
