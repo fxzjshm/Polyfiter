@@ -42,7 +42,7 @@ allprojects {
         asmVersion = '3.3.1'
         lwjglVersion = '3.1.0'
         svg2pixmapVersion = '0.0.1-SNAPSHOT'
-		dragomeVersion = '1.0.0-ALL-SNAPSHOT'
+        dragomeVersion = '1.0.0-ALL-SNAPSHOT'
     }
 
     repositories {

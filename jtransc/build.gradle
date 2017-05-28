@@ -4,9 +4,9 @@ apply plugin: "jtransc"
 sourceCompatibility = 1.6
 sourceSets.main.java.srcDirs = [ "src/main/java" ]
 
-project.ext.assetsDir = new File("../android/assets");
+project.ext.assetsDir = new File(projectDir.getParentFile().getAbsolutePath()+"/android/assets");
 project.ext.mainClassName = "com.entermoor.polyfiter.jtransc.JtranscLauncher"
-
+print project.ext.assetsDir.getAbsolutePath()
 jtransc {
      title = "Polyfiter"
      name = "Polyfiter"
@@ -14,7 +14,7 @@ jtransc {
      company = "Entermoor"
      package_ = "com.entermoor.polyfiter"
      embedResources = true
-     assets = ['android/assets/']
+     assets = [project.ext.assetsDir.getAbsolutePath()]
      vsync = true
      relooper = true
      minimizeNames = false
