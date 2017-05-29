@@ -6,7 +6,7 @@ sourceSets.main.java.srcDirs = [ "src/main/java" ]
 
 project.ext.assetsDir = new File(projectDir.getParentFile().getAbsolutePath()+"/android/assets");
 project.ext.mainClassName = "com.entermoor.polyfiter.jtransc.JtranscLauncher"
-print project.ext.assetsDir.getAbsolutePath()
+// print project.ext.assetsDir.getAbsolutePath()
 jtransc {
      title = "Polyfiter"
      name = "Polyfiter"
